@@ -35,6 +35,9 @@ _CENTER_ALIGN = Alignment(horizontal="center", vertical="center")
 _META_FILL = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
 _BOLD_FONT = Font(bold=True)
 _SUMMARY_FILL = PatternFill(start_color="E8F4F8", end_color="E8F4F8", fill_type="solid")
+# Section header rows (depth=-1): dark blue background, white bold text
+_SECTION_FONT = Font(bold=True, color="FFFFFF")
+_SECTION_FILL = PatternFill(start_color="1F497D", end_color="1F497D", fill_type="solid")
 
 
 def _year_code_to_fy_end(year_code: str) -> str:
@@ -75,8 +78,12 @@ def _write_master_data(ws, extractions: List[NL2Extract], existing_rows: Optiona
         fy_start = _year_code_to_fy_end(extract.year) if extract.year else ""
 
         for pl_key in NL2_ROW_ORDER:
-            pl_data = extract.data.data.get(pl_key, {})
             depth = NL2_ROW_DEPTH.get(pl_key, 1)
+            if depth == -1:
+                # Section headers are display-only; they carry no data
+                continue
+
+            pl_data = extract.data.data.get(pl_key, {})
 
             row_values = {
                 "PL_PARTICULARS":       get_pl_particulars(pl_key),
@@ -141,6 +148,16 @@ def _write_table_grid(ws, extract: NL2Extract, start_row: int):
         display = NL2_ROW_DISPLAY_NAMES.get(pl_key, pl_key)
 
         label_cell = ws.cell(row=ws_row, column=1, value=display)
+
+        if depth == -1:
+            # Section header row: dark fill, white bold, spans all columns
+            label_cell.font = _SECTION_FONT
+            label_cell.fill = _SECTION_FILL
+            for ci in range(2, 6):
+                cell = ws.cell(row=ws_row, column=ci, value=None)
+                cell.fill = _SECTION_FILL
+            continue
+
         if depth == 0:
             label_cell.font = _BOLD_FONT
 

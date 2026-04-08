@@ -5,6 +5,13 @@ Used by excel_writer.py to populate PL_PARTICULARS and Grouped_PL columns.
 """
 
 PL_METADATA = {
+    # Section headers — depth=-1, no data rows in Master_Data
+    "section_operating":                ("00-SECTION_OP",        "OPERATING PROFIT"),
+    "section_investments":              ("03b-SECTION_INV",      "INVESTMENTS"),
+    "section_provisions":               ("09b-SECTION_PROV",     "PROVISIONS"),
+    "section_expenses":                 ("12b-SECTION_EXP",      "EXPENSES"),
+    "section_appropriations":           ("27b-SECTION_APPROP",   "APPROPRIATIONS"),
+    # Data rows
     "op_fire":                          ("01-OP_FIRE",           "OPERATING PROFIT"),
     "op_marine":                        ("02-OP_MARINE",         "OPERATING PROFIT"),
     "op_miscellaneous":                 ("03-OP_MISC",           "OPERATING PROFIT"),

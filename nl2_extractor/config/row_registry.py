@@ -15,10 +15,12 @@ import re
 # 32 entries — the fixed row structure for all NL-2 forms.
 NL2_ROW_ORDER = [
     # --- Section 1: Operating Profit/Loss (from NL-1) ---
+    "section_operating",          # display-only header; depth=-1; no data extracted
     "op_fire",
     "op_marine",
     "op_miscellaneous",
     # --- Section 2: Income from Investments ---
+    "section_investments",        # display-only header
     "inv_interest_dividend_rent",
     "inv_profit_on_sale",
     "inv_loss_on_sale",
@@ -28,10 +30,12 @@ NL2_ROW_ORDER = [
     # --- Summary ---
     "total_a",
     # --- Section 4: Provisions (Other than taxation) ---
+    "section_provisions",         # display-only header
     "prov_diminution",
     "prov_doubtful_debts",
     "prov_others",
     # --- Section 5: Other Expenses ---
+    "section_expenses",           # display-only header
     "exp_non_insurance",
     "exp_bad_debts",
     "exp_subordinated_debt",
@@ -50,6 +54,7 @@ NL2_ROW_ORDER = [
     "provision_taxation",
     "profit_after_tax",
     # --- Appropriations ---
+    "section_appropriations",     # display-only header
     "approp_interim_dividend",
     "approp_final_dividend",
     "approp_transfer_reserves",
@@ -59,6 +64,13 @@ NL2_ROW_ORDER = [
 
 # Display-friendly names (exact canonical PDF labels)
 NL2_ROW_DISPLAY_NAMES = {
+    # Section headers (depth=-1) — display only
+    "section_operating":                 "Operating Profit / (Loss)",
+    "section_investments":               "Income from Investments",
+    "section_provisions":                "Provisions (Other than Taxation)",
+    "section_expenses":                  "Other Expenses",
+    "section_appropriations":            "Appropriations",
+    # Data rows
     "op_fire":                           "(a) Fire Insurance",
     "op_marine":                         "(b) Marine Insurance",
     "op_miscellaneous":                  "(c) Miscellaneous Insurance",
@@ -93,8 +105,13 @@ NL2_ROW_DISPLAY_NAMES = {
     "balance_carried_forward":           "Balance carried forward to Balance Sheet",
 }
 
-# Hierarchy depth: 0 = summary, 1 = line item, 2 = sub-item
+# Hierarchy depth: -1 = section header (display only), 0 = summary, 1 = line item, 2 = sub-item
 NL2_ROW_DEPTH = {
+    "section_operating":                -1,
+    "section_investments":              -1,
+    "section_provisions":               -1,
+    "section_expenses":                 -1,
+    "section_appropriations":           -1,
     "op_fire":                          1,
     "op_marine":                        1,
     "op_miscellaneous":                 1,

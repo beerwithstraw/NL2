@@ -70,8 +70,8 @@ def test_master_data_column_headers(tmp_path):
 
 
 def test_master_data_has_all_row_order_entries(tmp_path):
-    """Master_Data must have one row per NL2_ROW_ORDER entry."""
-    from config.row_registry import NL2_ROW_ORDER
+    """Master_Data must have one row per NL2_ROW_ORDER data entry (depth != -1)."""
+    from config.row_registry import NL2_ROW_ORDER, NL2_ROW_DEPTH
     output_file = tmp_path / "rows.xlsx"
     extract = NL2Extract(
         source_file="test.pdf", company_key="bajaj_allianz",
@@ -85,8 +85,9 @@ def test_master_data_has_all_row_order_entries(tmp_path):
     wb = load_workbook(output_file)
     ws = wb["Master_Data"]
     row_count = ws.max_row - 1  # subtract header
-    assert row_count == len(NL2_ROW_ORDER), (
-        f"Expected {len(NL2_ROW_ORDER)} data rows, got {row_count}"
+    expected = sum(1 for k in NL2_ROW_ORDER if NL2_ROW_DEPTH.get(k, 1) != -1)
+    assert row_count == expected, (
+        f"Expected {expected} data rows (excluding section headers), got {row_count}"
     )
 
 
