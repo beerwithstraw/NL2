@@ -1,0 +1,36 @@
+# ============================================================
+# NL-2-B-PL Profit and Loss Account Extraction Pipeline Configuration
+# Edit this file before running: python3 pipeline.py
+# ============================================================
+
+base_path: "/Users/pulkit/Desktop/Forms"
+
+# Fiscal years to process — list one or more
+fiscal_years:
+  - FY2026
+
+quarters:
+  - Q3
+
+# Full path to the master Excel output file
+master_sheet_path: "/Users/pulkit/Desktop/Forms/NL2_Master.xlsx"
+
+# Full path to the processed log file
+processed_log_path: "/Users/pulkit/Desktop/Forms/.NL2_processed_log.json"
+
+# How to handle Consolidated_*.pdf files at the Q{n}/ level
+consolidated_mode: dynamic
+
+# Minimum number of NL-2 keywords that must appear on a page
+nl2_keywords:
+  - "FORM NL-2"
+  - "NL-2-B-PL"
+  - "PROFIT AND LOSS ACCOUNT"
+  - "PROFIT/(LOSS) BEFORE TAX"
+  - "PROVISION FOR TAXATION"
+  - "INCOME FROM INVESTMENTS"
+
+nl2_keyword_min_matches: 3
+
+# Per-company overrides for consolidated PDF page detection.
+nl2_page_overrides: {}

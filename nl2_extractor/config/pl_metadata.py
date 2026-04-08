@@ -1,0 +1,50 @@
+"""
+P&L line item metadata — sort keys, section groupings, and hierarchy depth.
+
+Used by excel_writer.py to populate PL_PARTICULARS and Grouped_PL columns.
+"""
+
+PL_METADATA = {
+    "op_fire":                          ("01-OP_FIRE",           "OPERATING PROFIT"),
+    "op_marine":                        ("02-OP_MARINE",         "OPERATING PROFIT"),
+    "op_miscellaneous":                 ("03-OP_MISC",           "OPERATING PROFIT"),
+    "inv_interest_dividend_rent":       ("04-INV_INTEREST",      "INVESTMENTS"),
+    "inv_profit_on_sale":               ("05-INV_PROFIT",        "INVESTMENTS"),
+    "inv_loss_on_sale":                 ("06-INV_LOSS",          "INVESTMENTS"),
+    "inv_amortization":                 ("07-INV_AMORT",         "INVESTMENTS"),
+    "other_income":                     ("08-OTHER_INCOME",      "OTHER INCOME"),
+    "total_a":                          ("09-TOTAL_A",           "TOTALS"),
+    "prov_diminution":                  ("10-PROV_DIM",          "PROVISIONS"),
+    "prov_doubtful_debts":              ("11-PROV_DOUBTFUL",     "PROVISIONS"),
+    "prov_others":                      ("12-PROV_OTHERS",       "PROVISIONS"),
+    "exp_non_insurance":                ("13-EXP_NON_INS",       "EXPENSES"),
+    "exp_bad_debts":                    ("14-EXP_BAD_DEBTS",     "EXPENSES"),
+    "exp_subordinated_debt":            ("15-EXP_SUB_DEBT",      "EXPENSES"),
+    "exp_csr":                          ("16-EXP_CSR",           "EXPENSES"),
+    "exp_penalties":                    ("17-EXP_PENALTIES",     "EXPENSES"),
+    "exp_contribution_policyholders":   ("18-EXP_POLICY",        "EXPENSES"),
+    "exp_excess_management":            ("19-EXP_EXCESS_MGMT",   "EXPENSES"),
+    "exp_remuneration_kmp":             ("20-EXP_KMP",           "EXPENSES"),
+    "exp_contribution_others":          ("21-EXP_CONTRIB_OTH",   "EXPENSES"),
+    "exp_others":                       ("22-EXP_OTHERS",        "EXPENSES"),
+    "exp_investment_writeoff":          ("23-EXP_INV_WO",        "EXPENSES"),
+    "total_b":                          ("24-TOTAL_B",           "TOTALS"),
+    "profit_before_tax":                ("25-PBT",               "TOTALS"),
+    "provision_taxation":               ("26-TAX",               "TOTALS"),
+    "profit_after_tax":                 ("27-PAT",               "TOTALS"),
+    "approp_interim_dividend":          ("28-APPROP_INTERIM",    "APPROPRIATIONS"),
+    "approp_final_dividend":            ("29-APPROP_FINAL",      "APPROPRIATIONS"),
+    "approp_transfer_reserves":         ("30-APPROP_TRANSFER",   "APPROPRIATIONS"),
+    "balance_brought_forward":          ("31-BAL_BF",            "APPROPRIATIONS"),
+    "balance_carried_forward":          ("32-BAL_CF",            "APPROPRIATIONS"),
+}
+
+
+def get_pl_particulars(pl_key: str) -> str:
+    """Return the sort key (PL_PARTICULARS) for a canonical P&L key."""
+    return PL_METADATA.get(pl_key, (pl_key, ""))[0]
+
+
+def get_grouped_pl(pl_key: str) -> str:
+    """Return the section grouping (Grouped_PL) for a canonical P&L key."""
+    return PL_METADATA.get(pl_key, ("", pl_key))[1]

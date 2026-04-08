@@ -1,0 +1,9 @@
+nl2_extractor/outputs/
+nl2_extractor/logs/
+nl2_extractor/inputs/
+nl2_extractor/__pycache__/
+nl2_extractor/**/__pycache__/
+nl2_extractor/.coverage
+nl2_extractor/.pytest_cache/
+*.pyc
+.DS_Store
