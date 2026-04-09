@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 # Specialized year extractor for New India
 _NI_YEAR_RE = re.compile(r'31\.12\.(20\d{2})')
 
-def extract_nl2(pdf_path: str, company_key: str, quarter: str = "", year: str = "") -> NL2Extract:
+def parse_new_india_nl2(pdf_path: str, company_key: str, quarter: str = "", year: str = "") -> NL2Extract:
     """Entry point for New India Assurance NL-2 extraction (Signature-Matched)."""
     
     extract = NL2Extract(
