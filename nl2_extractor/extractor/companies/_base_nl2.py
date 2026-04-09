@@ -196,7 +196,8 @@ def detect_period_columns(table) -> Dict[str, int]:
     qtr_candidates: List[Tuple[int, int, int]] = []   # (col_idx, year_or_0, row_idx)
     ytd_candidates: List[Tuple[int, int, int]] = []
 
-    for ri, row in enumerate(table[:5]):
+    # Increased from table[:5] to table[:15] to handle filings with long metadata headers (e.g. Universal Sompo)
+    for ri, row in enumerate(table[:15]):
         for ci, cell in enumerate(row):
             # Skip the serial-number and label columns — their cells can accidentally
             # contain period keywords if the form title is merged into col 0/1.
@@ -247,6 +248,9 @@ def detect_period_columns(table) -> Dict[str, int]:
 # ---------------------------------------------------------------------------
 
 # State machine section labels (detected from col 1, lowercased)
+# Matches "(letter)[space*][for ]others[anything]" — section-aware prov_others detection
+_PROV_OTHERS_RE = re.compile(r"^\([a-z]\)\s*(for\s+)?others", re.IGNORECASE)
+
 _SECTION_TRIGGERS = {
     "operating profit":             "operating",
     "income from investments":      "investments",
@@ -293,9 +297,19 @@ def detect_pl_rows(table) -> Dict[int, str]:
             continue
 
         # Read label from col 1 first (NL-2 has S.No in col 0)
+        # Fallback to col 0 if col 1 is blank.
+        # Fallback to col 2 (newly added for Aditya Birla where labels follow S.No in col 1)
         raw_1 = (row[1] or "") if len(row) > 1 else ""
         raw_0 = (row[0] or "")
-        raw = raw_1.strip() if raw_1.strip() else raw_0.strip()
+        raw_2 = (row[2] or "") if len(row) > 2 else ""
+
+        if raw_1.strip():
+            raw = raw_1.strip()
+        elif raw_0.strip():
+            raw = raw_0.strip()
+        else:
+            raw = raw_2.strip()
+
         if not raw:
             continue
 
@@ -319,17 +333,8 @@ def detect_pl_rows(table) -> Dict[int, str]:
         if skip:
             continue
 
-        # Provisions "others" — section-aware disambiguation
-        if label in ("(c) others", "(c) others (to be specified)",
-                     "(c) others (please specify)"):
-            if section == "provisions":
-                pl_rows[ri] = "prov_others"
-            # Anything else (expenses section sub-items) is ignored — no longer extracted
-            continue
-
-        # Standard alias lookup — runs BEFORE section-skip so that canonical rows
-        # like total_b, profit_before_tax, profit_after_tax are always captured even
-        # when section state is still "expenses".
+        # Standard alias lookup — runs BEFORE prov_others and section-skip so that
+        # explicitly aliased rows (e.g. "(c) others(other income)") are captured first.
         key = NL2_ROW_ALIASES.get(label)
         if key is not None:
             pl_rows[ri] = key
@@ -345,6 +350,15 @@ def detect_pl_rows(table) -> Dict[int, str]:
         if matched:
             continue
 
+        # Provisions "others" — section-aware disambiguation.
+        # Only reached if no alias matched (explicit aliases like "(c) others(other income)"
+        # are handled above).
+        if _PROV_OTHERS_RE.match(label):
+            if section == "provisions":
+                pl_rows[ri] = "prov_others"
+            # Otherwise (investments / expenses sub-items) — skip
+            continue
+
         # Expense sub-items with no alias: skip — other_expenses is reverse-calculated
         if section == "expenses":
             continue
@@ -356,6 +370,9 @@ def detect_pl_rows(table) -> Dict[int, str]:
 # Grid extraction
 # ---------------------------------------------------------------------------
 
+_ACCUMULATE_KEYS = {"other_income", "provision_taxation"}
+
+
 def extract_nl2_grid(
     table: list,
     pl_rows: Dict[int, str],
@@ -365,6 +382,10 @@ def extract_nl2_grid(
     """
     For each (row_idx, pl_key) in pl_rows, extract the 4 period values
     from the corresponding period columns and store them in nl2_data.
+
+    Keys in _ACCUMULATE_KEYS are summed across multiple rows (e.g. other_income
+    has sub-items; provision_taxation has current + deferred components).
+    All other keys use last-write-wins (single canonical row expected).
     """
     for row_idx, pl_key in pl_rows.items():
         if row_idx >= len(table):
@@ -378,7 +399,11 @@ def extract_nl2_grid(
             val = clean_number(row[col_idx])
             if pl_key not in nl2_data.data:
                 nl2_data.data[pl_key] = {}
-            nl2_data.data[pl_key][period_key] = val
+            if pl_key in _ACCUMULATE_KEYS and val is not None:
+                existing = nl2_data.data[pl_key].get(period_key)
+                nl2_data.data[pl_key][period_key] = round((existing or 0.0) + val, 4)
+            else:
+                nl2_data.data[pl_key][period_key] = val
 
 
 # ---------------------------------------------------------------------------
@@ -494,8 +519,10 @@ def parse_header_driven_nl2(
     except Exception as e:
         logger.error(f"parse_header_driven_nl2 failed for {pdf_path}: {e}")
 
-    # Reverse-calculate other_expenses = total_b - sum(provisions)
+    # Structural derivations based on accounting identities
+    _derive_other_income(extract.data)
     _derive_other_expenses(extract.data)
+    _derive_provision_taxation(extract.data)
 
     if not extract.data.data:
         logger.warning(f"No P&L data extracted from {pdf_path}")
@@ -518,3 +545,52 @@ def _derive_other_expenses(nl2_data: "NL2Data") -> None:
         prov_oth = nl2_data.data.get("prov_others", {}).get(period) or 0
         other_exp = total_b - prov_dim - prov_dbt - prov_oth
         nl2_data.data.setdefault("other_expenses", {})[period] = round(other_exp, 4)
+
+
+def _derive_other_income(nl2_data: "NL2Data") -> None:
+    """
+    other_income = total_a - op_profit - inv_income
+
+    Where:
+      op_profit = sum(op_fire, op_marine, op_miscellaneous)
+      inv_income = inv_interest + inv_profit - inv_loss - inv_amortization
+
+    Defaults to None if total_a is missing. Missing components default to 0.
+    """
+    for period in ("cy_qtr", "cy_ytd", "py_qtr", "py_ytd"):
+        total_a = nl2_data.data.get("total_a", {}).get(period)
+        if total_a is None:
+            nl2_data.data.setdefault("other_income", {})[period] = None
+            continue
+
+        op_fire = nl2_data.data.get("op_fire", {}).get(period) or 0
+        op_marine = nl2_data.data.get("op_marine", {}).get(period) or 0
+        op_misc = nl2_data.data.get("op_miscellaneous", {}).get(period) or 0
+        op_total = op_fire + op_marine + op_misc
+
+        inv_int = nl2_data.data.get("inv_interest_dividend_rent", {}).get(period) or 0
+        inv_prof = nl2_data.data.get("inv_profit_on_sale", {}).get(period) or 0
+        inv_loss = nl2_data.data.get("inv_loss_on_sale", {}).get(period) or 0
+        inv_amort = nl2_data.data.get("inv_amortization", {}).get(period) or 0
+        inv_total = inv_int + inv_prof + inv_loss + inv_amort
+
+        other_inc = total_a - op_total - inv_total
+        nl2_data.data.setdefault("other_income", {})[period] = round(other_inc, 4)
+
+
+def _derive_provision_taxation(nl2_data: "NL2Data") -> None:
+    """
+    provision_taxation = profit_before_tax - profit_after_tax
+
+    Defaults to None if either PBT or PAT is missing.
+    """
+    for period in ("cy_qtr", "cy_ytd", "py_qtr", "py_ytd"):
+        pbt = nl2_data.data.get("profit_before_tax", {}).get(period)
+        pat = nl2_data.data.get("profit_after_tax", {}).get(period)
+
+        if pbt is None or pat is None:
+            # Highlight as None to signal derivation failure (per user request)
+            nl2_data.data.setdefault("provision_taxation", {})[period] = None
+        else:
+            tax = pbt - pat
+            nl2_data.data.setdefault("provision_taxation", {})[period] = round(tax, 4)

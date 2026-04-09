@@ -1,5 +1,11 @@
 from .bajaj_allianz import parse_bajaj_nl2
+from .acko import parse_acko_nl2
+from .ecgc import parse_ecgc_nl2
+from .new_india import extract_nl2
 
 PARSER_REGISTRY = {
-    "parse_bajaj_nl2": parse_bajaj_nl2,
+    "bajaj_allianz": parse_bajaj_nl2,
+    "acko": parse_acko_nl2,
+    "ecgc": parse_ecgc_nl2,
+    "new_india": extract_nl2,
 }

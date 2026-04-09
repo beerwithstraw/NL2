@@ -150,6 +150,9 @@ COMPANY_DISPLAY_NAMES = {
 # ---------------------------------------------------------------------------
 DEDICATED_PARSER = {
     "bajaj_allianz": "parse_bajaj_nl2",
+    "acko": "acko",
+    "ecgc": "ecgc",
+    "new_india": "new_india",
 }
 
 # ---------------------------------------------------------------------------
@@ -158,3 +161,10 @@ DEDICATED_PARSER = {
 
 # Companies that use Indian number grouping (1,24,941 style)
 INDIAN_NUMBER_FORMAT = {"national_insurance", "united_india"}
+
+# Fields confirmed as missing in source PDFs (manual audit)
+# Maps company_key -> set of pl_keys to silence in completeness check
+COMPANY_SPECIFIC_IGNORE = {
+    "united_india": {"total_b", "other_expenses"},
+    "raheja_qbe": {"total_b", "other_expenses"},
+}

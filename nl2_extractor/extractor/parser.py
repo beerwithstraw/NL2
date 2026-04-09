@@ -2,7 +2,8 @@
 NL-2 Parser entry point.
 
 Routes to dedicated parsers (per company_registry.DEDICATED_PARSER) or
-raises an error for companies without a dedicated parser yet.
+falls back to the generic header-driven NL2 parser if no dedicated parser
+is registered.
 """
 
 import logging
@@ -10,6 +11,7 @@ from pathlib import Path
 
 from config.company_registry import DEDICATED_PARSER, COMPANY_DISPLAY_NAMES
 from extractor.models import NL2Extract, NL2Data
+from extractor.companies._base_nl2 import parse_header_driven_nl2
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +23,8 @@ def parse_pdf(pdf_path: str, company_key: str, quarter: str = "", year: str = ""
     Routing:
       1. Look up company_key in DEDICATED_PARSER.
       2. If a dedicated function name exists, look it up in PARSER_REGISTRY and call it.
-      3. If no dedicated parser exists, return an empty NL2Extract with an error note.
-         (NL2 has no generic parser -- every company needs a dedicated one.)
+      3. If no dedicated parser exists, fall back to the generic header-driven
+         NL2 parser (parse_header_driven_nl2).
     """
     company_name = COMPANY_DISPLAY_NAMES.get(company_key, company_key.replace("_", " ").title())
 
@@ -39,15 +41,12 @@ def parse_pdf(pdf_path: str, company_key: str, quarter: str = "", year: str = ""
                 f"for company '{company_key}'"
             )
 
-    # No dedicated parser available
-    logger.warning(f"No dedicated NL2 parser for '{company_key}' -- returning empty extract")
-    return NL2Extract(
-        source_file=Path(pdf_path).name,
+    # Fall back to generic header-driven parser
+    logger.info(f"Routing to generic NL2 parser for company: {company_key}")
+    return parse_header_driven_nl2(
+        pdf_path=pdf_path,
         company_key=company_key,
-        company_name=company_name,
-        form_type="NL2",
+        company_name_fallback=company_name,
         quarter=quarter,
         year=year,
-        data=NL2Data(),
-        extraction_errors=[f"No dedicated NL2 parser for company '{company_key}'"],
     )

@@ -129,15 +129,8 @@ def normalise_text(raw):
     text = text.lower()
 
     # Remove non-alphanumeric except spaces, forward slashes, apostrophes,
-    # periods, colons, hyphens, and parentheses (these appear in known aliases)
-    # Actually, let's keep it simple: remove only characters that would never
-    # appear in an alias. The alias dict already has the normalised forms.
-    # Strategy: keep alphanumeric, spaces, and common punctuation in aliases.
-    # Looking at ROW_ALIASES and LOB_ALIASES, they contain: letters, digits,
-    # spaces, colons, slashes, apostrophes (both kinds), hyphens, periods,
-    # parentheses.
-    # So we keep all of those and remove everything else.
-    text = re.sub(r"[^a-z0-9\s/:'\u2019()\-.]", "", text)
+    # periods, colons, hyphens, parentheses, ampersands, and commas.
+    text = re.sub(r"[^a-z0-9\s/:'\u2019()\-.,&]", "", text)
 
     # Collapse multiple spaces
     text = re.sub(r'\s+', ' ', text)

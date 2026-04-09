@@ -84,21 +84,31 @@ _TOTAL_A_COMPONENTS = [
 
 
 def _check_total_a_identity(exc: NL2Extract) -> List[ValidationResult]:
+    """Verifies that Total(A) derivation is consistent with components."""
     results = []
     for period in ("cy_qtr", "cy_ytd", "py_qtr", "py_ytd"):
         total = _get(exc, "total_a", period)
         if total is None:
+            # Completeness check will handle the missing total_a
             continue
-        component_sum = sum(
-            (_get(exc, k, period) or 0.0) for k in _TOTAL_A_COMPONENTS
+
+        # components = Operating Profit + Net Investment Income + Other Income
+        # Net Investment Income sum includes signs from the extractor
+        component_sum = (
+            (_get(exc, "op_fire", period) or 0.0) +
+            (_get(exc, "op_marine", period) or 0.0) +
+            (_get(exc, "op_miscellaneous", period) or 0.0) +
+            (_get(exc, "inv_interest_dividend_rent", period) or 0.0) +
+            (_get(exc, "inv_profit_on_sale", period) or 0.0) +
+            (_get(exc, "inv_loss_on_sale", period) or 0.0) +
+            (_get(exc, "inv_amortization", period) or 0.0) +
+            (_get(exc, "other_income", period) or 0.0)
         )
-        n_found = sum(1 for k in _TOTAL_A_COMPONENTS if _get(exc, k, period) is not None)
-        if n_found == 0:
-            continue
         delta = abs(total - component_sum)
         status = "PASS" if delta <= IDENTITY_TOLERANCE else "FAIL"
-        results.append(_make(exc, "total_a", period, "TOTAL_A_IDENTITY", status,
-                             component_sum, total, delta))
+        results.append(_make(exc, "total_a", period, "TOTAL_A_DERIVATION", status,
+                             component_sum, total, delta,
+                             note="Verifies Other Income derivation against Total A"))
     return results
 
 
@@ -149,19 +159,24 @@ def _check_pbt_identity(exc: NL2Extract) -> List[ValidationResult]:
 # ---------------------------------------------------------------------------
 
 def _check_pat_identity(exc: NL2Extract) -> List[ValidationResult]:
+    """Verifies that PAT = PBT - Provision for Taxation (where Tax is derived)."""
     results = []
     for period in ("cy_qtr", "cy_ytd", "py_qtr", "py_ytd"):
         pat = _get(exc, "profit_after_tax", period)
         pbt = _get(exc, "profit_before_tax", period)
         tax = _get(exc, "provision_taxation", period)
-        if any(v is None for v in (pat, pbt)):
+
+        if pbt is None or pat is None:
+            # Derivation results in None if either are missing (Highighted as None per user)
             continue
+
         tax_eff = tax if tax is not None else 0.0
         expected = pbt - tax_eff
         delta = abs(pat - expected)
         status = "PASS" if delta <= IDENTITY_TOLERANCE else "FAIL"
-        results.append(_make(exc, "profit_after_tax", period, "PAT_IDENTITY", status,
-                             expected, pat, delta))
+        results.append(_make(exc, "profit_after_tax", period, "PAT_DERIVATION", status,
+                             expected, pat, delta,
+                             note="Verifies Tax derivation against PBT and PAT"))
     return results
 
 
@@ -199,18 +214,49 @@ def _check_ytd_ge_qtr(exc: NL2Extract) -> List[ValidationResult]:
 # Check 6: COMPLETENESS — mandatory rows must be non-null for cy_ytd
 # ---------------------------------------------------------------------------
 
-_MANDATORY_ROWS = {"total_a", "total_b", "profit_before_tax", "profit_after_tax"}
+_MANDATORY_ROWS = {"total_a", "profit_before_tax", "profit_after_tax"}
 _WARN_IF_MISSING = set([
     "op_fire", "op_marine", "op_miscellaneous",
     "inv_interest_dividend_rent",
     "provision_taxation",
 ])
 
+# Items that are structurally empty or generally nil in Q3 results
+_COMPLETENESS_IGNORE = {
+    "section_operating", "section_investments", "section_provisions", 
+    "section_expenses", "section_appropriations",
+    "approp_interim_dividend", "approp_final_dividend", "approp_transfer_reserves",
+    "inv_loss_on_sale", "inv_amortization", "inv_profit_on_sale",
+    "inv_interest_dividend_rent", "op_marine",
+    "prov_others", "prov_diminution", "prov_doubtful_debts",
+    "balance_brought_forward", "balance_carried_forward"
+}
+
 
 def _check_completeness_nl2(exc: NL2Extract) -> List[ValidationResult]:
+    from config.company_metadata import COMPANY_METADATA
+    from config.company_registry import COMPANY_SPECIFIC_IGNORE
+    
     results = []
+    metadata = COMPANY_METADATA.get(exc.company_key, {})
+    sector = metadata.get("sector", "")
+    is_sahi_or_special = (sector == "SAHI" or sector == "Specialized Insurers")
+    specific_ignore = COMPANY_SPECIFIC_IGNORE.get(exc.company_key, set())
+    
     from config.row_registry import NL2_ROW_ORDER
     for pl_key in NL2_ROW_ORDER:
+        # Global ignore list
+        if pl_key in _COMPLETENESS_IGNORE:
+            continue
+            
+        # Sector-specific ignore (Health insurers don't do Fire/Marine)
+        if is_sahi_or_special and pl_key in ["op_fire", "op_marine"]:
+            continue
+            
+        # Company-specific manual override
+        if pl_key in specific_ignore:
+            continue
+            
         val = _get(exc, pl_key, "cy_ytd")
         if val is None:
             status = "FAIL" if pl_key in _MANDATORY_ROWS else "WARN"

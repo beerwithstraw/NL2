@@ -68,7 +68,7 @@ NL2_ROW_DISPLAY_NAMES = {
     "inv_profit_on_sale":                "(b) Profit on sale of investments",
     "inv_loss_on_sale":                  "(c) Loss on sale/ redemption of investments",
     "inv_amortization":                  "(d) Amortization of Premium / Discount on Investments",
-    "other_income":                      "Other Income - Miscellaneous Income",
+    "other_income":                      "Other Income - Miscellaneous Income [Calculated]",
     "total_a":                           "TOTAL (A)",
     "prov_diminution":                   "(a) For diminution in the value of investments",
     "prov_doubtful_debts":               "(b) For doubtful debts",
@@ -76,7 +76,7 @@ NL2_ROW_DISPLAY_NAMES = {
     "other_expenses":                    "Other Expenses (Total)",
     "total_b":                           "TOTAL (B)",
     "profit_before_tax":                 "Profit/(Loss) Before Tax",
-    "provision_taxation":                "Provision for Taxation",
+    "provision_taxation":                "Provision for Taxation [Calculated]",
     "profit_after_tax":                  "Profit / (Loss) after tax",
     "approp_interim_dividend":           "(a) Interim dividends paid during the year",
     "approp_final_dividend":             "(b) Final dividend paid",
@@ -144,35 +144,56 @@ NL2_ROW_ALIASES = {
     "interest, dividend & rent \u2013 gross":                  "inv_interest_dividend_rent",
     "interest dividend & rent gross":                           "inv_interest_dividend_rent",
     "(a) interest dividend and rent gross":                     "inv_interest_dividend_rent",
+    "interest , dividend & rent - gross":                       "inv_interest_dividend_rent",
+    "interest , dividend & rent  - gross":                      "inv_interest_dividend_rent",
+    "(a) interest , dividend & rent - gross":                   "inv_interest_dividend_rent",
 
     # inv_profit_on_sale
     "(b) profit on sale of investments":                        "inv_profit_on_sale",
     "profit on sale of investments":                            "inv_profit_on_sale",
+    "(b) profit on sale / redemption of investments":           "inv_profit_on_sale",
 
     # inv_loss_on_sale
     "(c) loss on sale/ redemption of investments":              "inv_loss_on_sale",
     "(c) loss on sale/redemption of investments":               "inv_loss_on_sale",
     "(c) (loss on sale/ redemption of investments)":            "inv_loss_on_sale",
     "(c) (loss on sale/redemption of investments)":             "inv_loss_on_sale",
+    "(c) (loss on sale / redemption of investments)":           "inv_loss_on_sale",
+    "(c) (loss) on sale/ redemption of investments":            "inv_loss_on_sale",
+    "(c) (loss on sale)/ redemption of investments":            "inv_loss_on_sale",
     "loss on sale/ redemption of investments":                  "inv_loss_on_sale",
     "loss on sale/redemption of investments":                   "inv_loss_on_sale",
     "loss on sale of investments":                              "inv_loss_on_sale",
+    "(c) loss on sale of investments":                          "inv_loss_on_sale",
+    "(c) less: loss on sale/redemption of investments":          "inv_loss_on_sale",
 
     # inv_amortization
     "(d) amortization of premium / discount on investments":    "inv_amortization",
     "(d) amortisation of premium / discount on investments":    "inv_amortization",
     "(d) amortization of premium/ discount on investments":     "inv_amortization",
+    "(d) amortization of premium/discount on investments":      "inv_amortization",
+    "(c) amortization of premium / discount on investments":    "inv_amortization",
+    "(d) less: amortization of premium/discount on investments": "inv_amortization",
+    "(d) amortization of (premium) / discount on investments":   "inv_amortization",
+    "(d) amortization of premium / (discount) on investments":   "inv_amortization",
     "amortization of premium / discount on investments":        "inv_amortization",
     "amortisation of premium / discount on investments":        "inv_amortization",
     "amortization of premium":                                  "inv_amortization",
 
     # other_income
+    "profit / (loss) on sale of assets":                        "other_income",
+    "recovery of bad debts written off":                        "other_income",
     "other income - miscellaneous income":                      "other_income",
     "other income \u2013 miscellaneous income":                "other_income",
     "other income":                                             "other_income",
+    "(a) other income":                                         "other_income",
+    "b) other income":                                          "other_income",
+    "(c) others(other income)":                                "other_income",
     "other income (to be specified)":                           "other_income",
     "other income (miscellaneous receipts)":                    "other_income",
     "miscellaneous income":                                     "other_income",
+    "c) miscellaneous income":                                  "other_income",
+    "other income (i) profit/loss on sale of fixed assets, (ii) exchange gain/loss, (iii) old unclaimed balance written back, (iv) misc (like transfer fee, duplicate fee) (v) int on income tax refund": "other_income",
     "(a) interest on income tax refund":                        "other_income",
     "(b) interest on income tax refund":                        "other_income",
     "(a) interest income on tax refund":                        "other_income",
@@ -184,13 +205,22 @@ NL2_ROW_ALIASES = {
     "(c) recovery of bad debts written off":                    "other_income",
     "(c) miscellaneous income":                                 "other_income",
     "(c ) provision written back":                              "other_income",
+    "(b) provision written back":                               "other_income",
 
     # total_a
     "total (a)":                                                "total_a",
+    "total(a)":                                                 "total_a",
+    "total ( a )":                                              "total_a",
+    "total (a+b)":                                              "total_a",
 
     # prov_diminution
     "(a) for diminution in the value of investments":           "prov_diminution",
     "for diminution in the value of investments":               "prov_diminution",
+    "i) provision on standard assets/npa":                      "prov_diminution",
+    "(c) others- provision for doubtful investments":           "prov_diminution",
+    "(a) provision for diminution in value of investments written back": "prov_diminution",
+    "(a) for diminution in the value of investments (written back)": "prov_diminution",
+    "provision for diminution in the value of investments":     "prov_diminution",
 
     # prov_doubtful_debts
     "(b) for doubtful debts":                                   "prov_doubtful_debts",
@@ -222,13 +252,40 @@ NL2_ROW_ALIASES = {
     "profit/(loss) before tax (a-b)":                          "profit_before_tax",
     "profit before tax (a-b)":                                 "profit_before_tax",
     "profit/ (loss) before tax ( a - b)":                      "profit_before_tax",
+    "profit/ (loss) before tax":                               "profit_before_tax",
 
-    # provision_taxation
+    # provision_taxation — current tax + deferred tax components all accumulate
     "provision for taxation":                                   "provision_taxation",
     "current tax":                                              "provision_taxation",
+    "tax":                                                      "provision_taxation",
+    "provision for taxation / taxation of earlier years":       "provision_taxation",
     "(a) current tax":                                          "provision_taxation",
     "(i) current tax":                                          "provision_taxation",
+    "(a) current tax /mat payable":                             "provision_taxation",
+    "(a) current tax / mat payable":                            "provision_taxation",
+    "(a) current tax \ minimum alternate tax":                  "provision_taxation",
+    "(a) current tax / minimum alternate tax":                  "provision_taxation",
     "- current tax":                                            "provision_taxation",
+    "current tax expense":                                      "provision_taxation",
+    "provision for taxation - current tax":                     "provision_taxation",
+    "provision for taxation (inclusive of mat)":                "provision_taxation",
+    "income tax":                                               "provision_taxation",
+    # deferred tax sub-items — accumulated into provision_taxation
+    "(b) deferred tax":                                         "provision_taxation",
+    "(b) deferred tax (income) / expense":                      "provision_taxation",
+    "(b) deferred tax (income)/expense":                        "provision_taxation",
+    "(c) deferred tax (income) / expense":                      "provision_taxation",
+    "(c) deferred tax (income)/expense":                        "provision_taxation",
+    "deferred tax for current period":                          "provision_taxation",
+    "deferred tax for earlier year":                            "provision_taxation",
+    "(ii) deferred tax":                                        "provision_taxation",
+    "deferred tax":                                             "provision_taxation",
+    "short provision for earlier year":                         "provision_taxation",
+    "short/(excess) provision of earlier years":                "provision_taxation",
+    "(c) short/(excess) provision of earlier years":            "provision_taxation",
+    "prior period adjustments":                                 "provision_taxation",
+    "(iii) tax relating to earlier years":                      "provision_taxation",
+    "tax relating to earlier years":                            "provision_taxation",
 
     # profit_after_tax
     "profit / (loss) after tax":                                "profit_after_tax",
@@ -239,6 +296,7 @@ NL2_ROW_ALIASES = {
     # approp_interim_dividend
     "(a) interim dividends paid during the year":               "approp_interim_dividend",
     "(a) interim dividends paid during the period":             "approp_interim_dividend",
+    "(a) interim dividends paid during the period / year":      "approp_interim_dividend",
     "interim dividends paid during the year":                   "approp_interim_dividend",
     "interim dividends paid during the period":                 "approp_interim_dividend",
 
@@ -250,7 +308,14 @@ NL2_ROW_ALIASES = {
     "(c) transfer to any reserves or other accounts (to be specified)": "approp_transfer_reserves",
     "(c) transfer to any reserves or other accounts ( to be specified )": "approp_transfer_reserves",
     "(c) transfer to any reserves or other accounts":           "approp_transfer_reserves",
+    "(d) transfer to any reserves or other account":           "approp_transfer_reserves",
+    "(c) transfer to debenture redemption reserve":             "approp_transfer_reserves",
+    "(d) transfer to debenture redemption reserve":             "approp_transfer_reserves",
     "transfer to any reserves or other accounts":               "approp_transfer_reserves",
+    "(d) transfer to any reserves or other account":            "approp_transfer_reserves",
+    "(d) transfer to reserves":                                 "approp_transfer_reserves",
+    "transfer to reserve":                                      "approp_transfer_reserves",
+    "(d) debenture redemption reserve":                         "approp_transfer_reserves",
 
     # balance_brought_forward
     "balance of profit/ loss brought forward from last year":   "balance_brought_forward",
@@ -258,6 +323,11 @@ NL2_ROW_ALIASES = {
     "balance of profit/ (loss) brought forward from last year": "balance_brought_forward",
     "balance of profit/(loss) brought forward from last year":  "balance_brought_forward",
     "balance of profit/ loss brought forward from last period": "balance_brought_forward",
+    "balance of profit/ loss brought forward from period/year": "balance_brought_forward",
+    "balance of profit/ loss brought forward from last year/period": "balance_brought_forward",
+    "balance of profit/ (loss) brought forward from last period / year": "balance_brought_forward",
+    "balance of profit / (loss) brought forward from last quarter/year": "balance_brought_forward",
+    "balance of profit/ loss brought forward from last quarter/year": "balance_brought_forward",
     "balance of profit/ loss brought forward":                  "balance_brought_forward",
     "balance of profit/loss brought forward":                   "balance_brought_forward",
     "balance of profit / loss brought forward":                 "balance_brought_forward",
@@ -289,12 +359,14 @@ NL2_SKIP_PATTERNS = [
     re.compile(r"^\(amount in"),                # unit header row
     re.compile(r"^notes?:?\s+to form"),         # footnote block
     re.compile(r"^notes?:\s"),                  # footnote
-    re.compile(r"^\(ii\) deferred tax"),        # sub-item of provision_taxation
-    re.compile(r"^\(iii\) tax relating"),       # sub-item of provision_taxation
-    re.compile(r"^-deferred tax"),              # sub-item of provision_taxation
-    re.compile(r"^-tax relating"),              # sub-item of provision_taxation
-    re.compile(r"^deferred tax$"),              # sub-item of provision_taxation
+    re.compile(r"^\(iii\) tax relating"),       # not a P&L item
+    re.compile(r"^-tax relating"),              # not a P&L item
     re.compile(r"^\(c\) dividend distribution tax"),  # sub-item
     re.compile(r"^mat credit"),                 # sub-item
     re.compile(r"^less:"),                      # compound taxation block
+    re.compile(r"^s\.?\s*no\.?$"),             # S.No column header
+    re.compile(r"^\( in "),                    # unit header e.g. "( in Lakhs)"
+    re.compile(r"registration no\."),          # company registration text block
+    re.compile(r"^name of the insurer"),       # header label
+    re.compile(r"profit and loss account for the"),  # repeated form title within cell
 ]
