@@ -34,19 +34,9 @@ NL2_ROW_ORDER = [
     "prov_diminution",
     "prov_doubtful_debts",
     "prov_others",
-    # --- Section 5: Other Expenses ---
+    # --- Section 5: Other Expenses (reverse-calculated: total_b - provisions) ---
     "section_expenses",           # display-only header
-    "exp_non_insurance",
-    "exp_bad_debts",
-    "exp_subordinated_debt",
-    "exp_csr",
-    "exp_penalties",
-    "exp_contribution_policyholders",
-    "exp_excess_management",
-    "exp_remuneration_kmp",
-    "exp_contribution_others",
-    "exp_others",
-    "exp_investment_writeoff",
+    "other_expenses",             # = total_b - prov_diminution - prov_doubtful_debts - prov_others
     # --- Summary ---
     "total_b",
     # --- Bottom line items ---
@@ -83,17 +73,7 @@ NL2_ROW_DISPLAY_NAMES = {
     "prov_diminution":                   "(a) For diminution in the value of investments",
     "prov_doubtful_debts":               "(b) For doubtful debts",
     "prov_others":                       "(c) Others [Provisions]",
-    "exp_non_insurance":                 "(a) Expenses other than those related to Insurance Business",
-    "exp_bad_debts":                     "(b) Bad debts written off",
-    "exp_subordinated_debt":             "(c) Interest on subordinated debt",
-    "exp_csr":                           "(d) Expenses towards CSR activities",
-    "exp_penalties":                     "(e) Penalties",
-    "exp_contribution_policyholders":    "(f) Contribution to Policyholders' A/c",
-    "exp_excess_management":             "(i) Towards Excess Expenses of Management",
-    "exp_remuneration_kmp":              "(ii) Remuneration of MD/CEO/WTD/Other KMP's",
-    "exp_contribution_others":           "(iii) Others [Contribution sub-items]",
-    "exp_others":                        "(g) Others",
-    "exp_investment_writeoff":           "(i) Investment written off",
+    "other_expenses":                    "Other Expenses (Total)",
     "total_b":                           "TOTAL (B)",
     "profit_before_tax":                 "Profit/(Loss) Before Tax",
     "provision_taxation":                "Provision for Taxation",
@@ -124,17 +104,7 @@ NL2_ROW_DEPTH = {
     "prov_diminution":                  1,
     "prov_doubtful_debts":              1,
     "prov_others":                      1,
-    "exp_non_insurance":                1,
-    "exp_bad_debts":                    1,
-    "exp_subordinated_debt":            1,
-    "exp_csr":                          1,
-    "exp_penalties":                    1,
-    "exp_contribution_policyholders":   1,
-    "exp_excess_management":            2,
-    "exp_remuneration_kmp":             2,
-    "exp_contribution_others":          2,
-    "exp_others":                       1,
-    "exp_investment_writeoff":          2,
+    "other_expenses":                   1,
     "total_b":                          0,
     "profit_before_tax":                0,
     "provision_taxation":               0,
@@ -182,6 +152,8 @@ NL2_ROW_ALIASES = {
     # inv_loss_on_sale
     "(c) loss on sale/ redemption of investments":              "inv_loss_on_sale",
     "(c) loss on sale/redemption of investments":               "inv_loss_on_sale",
+    "(c) (loss on sale/ redemption of investments)":            "inv_loss_on_sale",
+    "(c) (loss on sale/redemption of investments)":             "inv_loss_on_sale",
     "loss on sale/ redemption of investments":                  "inv_loss_on_sale",
     "loss on sale/redemption of investments":                   "inv_loss_on_sale",
     "loss on sale of investments":                              "inv_loss_on_sale",
@@ -198,7 +170,20 @@ NL2_ROW_ALIASES = {
     "other income - miscellaneous income":                      "other_income",
     "other income \u2013 miscellaneous income":                "other_income",
     "other income":                                             "other_income",
+    "other income (to be specified)":                           "other_income",
+    "other income (miscellaneous receipts)":                    "other_income",
     "miscellaneous income":                                     "other_income",
+    "(a) interest on income tax refund":                        "other_income",
+    "(b) interest on income tax refund":                        "other_income",
+    "(a) interest income on tax refund":                        "other_income",
+    "interest on income tax refund":                            "other_income",
+    "other income (interest on it refund )":                    "other_income",
+    "(a) bad debts recovered":                                  "other_income",
+    "(a) bad debts/balances written back":                      "other_income",
+    "(b) liability written back":                               "other_income",
+    "(c) recovery of bad debts written off":                    "other_income",
+    "(c) miscellaneous income":                                 "other_income",
+    "(c ) provision written back":                              "other_income",
 
     # total_a
     "total (a)":                                                "total_a",
@@ -226,36 +211,6 @@ NL2_ROW_ALIASES = {
     "(c) interest on subordinated debt":                        "exp_subordinated_debt",
     "interest on subordinated debt":                            "exp_subordinated_debt",
 
-    # exp_csr
-    "(d) expenses towards csr activities":                      "exp_csr",
-    "expenses towards csr activities":                          "exp_csr",
-
-    # exp_penalties
-    "(e) penalties":                                            "exp_penalties",
-    "penalties":                                                "exp_penalties",
-
-    # exp_contribution_policyholders
-    "(f) contribution to policyholders' a/c":                   "exp_contribution_policyholders",
-    "(f) contribution to policyholders\u2019 a/c":             "exp_contribution_policyholders",
-    "contribution to policyholders' a/c":                       "exp_contribution_policyholders",
-
-    # exp_excess_management
-    "(i) towards excess expenses of management":                "exp_excess_management",
-    "towards excess expenses of management":                    "exp_excess_management",
-
-    # exp_remuneration_kmp
-    "(ii) remuneration of md/ceo/wtd/other kmp's":              "exp_remuneration_kmp",
-    "(ii) remuneration of md/ceo/wtd/other kmp\u2019s":        "exp_remuneration_kmp",
-    "remuneration of md/ceo/wtd/other kmp":                     "exp_remuneration_kmp",
-    "remuneration of md/ceo/wtd/other kmp's":                   "exp_remuneration_kmp",
-
-    # NOTE: "(iii) others" (exp_contribution_others) is OMITTED — section-aware
-    # NOTE: "(g) others" (exp_others) is OMITTED — section-aware
-
-    # exp_investment_writeoff
-    "(i) investment written off":                               "exp_investment_writeoff",
-    "investment written off":                                   "exp_investment_writeoff",
-
     # total_b
     "total (b)":                                                "total_b",
 
@@ -264,18 +219,28 @@ NL2_ROW_ALIASES = {
     "profit / (loss) before tax":                               "profit_before_tax",
     "profit before tax":                                        "profit_before_tax",
     "profit/loss before tax":                                   "profit_before_tax",
+    "profit/(loss) before tax (a-b)":                          "profit_before_tax",
+    "profit before tax (a-b)":                                 "profit_before_tax",
+    "profit/ (loss) before tax ( a - b)":                      "profit_before_tax",
 
     # provision_taxation
     "provision for taxation":                                   "provision_taxation",
+    "current tax":                                              "provision_taxation",
+    "(a) current tax":                                          "provision_taxation",
+    "(i) current tax":                                          "provision_taxation",
+    "- current tax":                                            "provision_taxation",
 
     # profit_after_tax
     "profit / (loss) after tax":                                "profit_after_tax",
     "profit/(loss) after tax":                                  "profit_after_tax",
     "profit after tax":                                         "profit_after_tax",
+    "profit/ (loss) after tax":                                 "profit_after_tax",
 
     # approp_interim_dividend
     "(a) interim dividends paid during the year":               "approp_interim_dividend",
+    "(a) interim dividends paid during the period":             "approp_interim_dividend",
     "interim dividends paid during the year":                   "approp_interim_dividend",
+    "interim dividends paid during the period":                 "approp_interim_dividend",
 
     # approp_final_dividend
     "(b) final dividend paid":                                  "approp_final_dividend",
@@ -283,18 +248,27 @@ NL2_ROW_ALIASES = {
 
     # approp_transfer_reserves
     "(c) transfer to any reserves or other accounts (to be specified)": "approp_transfer_reserves",
+    "(c) transfer to any reserves or other accounts ( to be specified )": "approp_transfer_reserves",
     "(c) transfer to any reserves or other accounts":           "approp_transfer_reserves",
     "transfer to any reserves or other accounts":               "approp_transfer_reserves",
 
     # balance_brought_forward
     "balance of profit/ loss brought forward from last year":   "balance_brought_forward",
     "balance of profit/loss brought forward from last year":    "balance_brought_forward",
+    "balance of profit/ (loss) brought forward from last year": "balance_brought_forward",
+    "balance of profit/(loss) brought forward from last year":  "balance_brought_forward",
+    "balance of profit/ loss brought forward from last period": "balance_brought_forward",
     "balance of profit/ loss brought forward":                  "balance_brought_forward",
     "balance of profit/loss brought forward":                   "balance_brought_forward",
+    "balance of profit / loss brought forward":                 "balance_brought_forward",
 
     # balance_carried_forward
     "balance carried forward to balance sheet":                 "balance_carried_forward",
+    "balance carried forward to reserves and surplus/balance sheet": "balance_carried_forward",
     "balance carried forward":                                  "balance_carried_forward",
+
+    # op_miscellaneous variant with extra space
+    "(c ) miscellaneous insurance":                             "op_miscellaneous",
 }
 
 # Rows to skip — section header rows and column header rows.
@@ -310,5 +284,17 @@ NL2_SKIP_PATTERNS = [
     re.compile(r"^particulars$"),               # column header row
     re.compile(r"^form nl"),                    # form title row
     re.compile(r"^profit and loss"),            # form title row
+    re.compile(r"^periodic disclosures"),       # form title row
     re.compile(r"^\d+$"),                       # bare serial numbers
+    re.compile(r"^\(amount in"),                # unit header row
+    re.compile(r"^notes?:?\s+to form"),         # footnote block
+    re.compile(r"^notes?:\s"),                  # footnote
+    re.compile(r"^\(ii\) deferred tax"),        # sub-item of provision_taxation
+    re.compile(r"^\(iii\) tax relating"),       # sub-item of provision_taxation
+    re.compile(r"^-deferred tax"),              # sub-item of provision_taxation
+    re.compile(r"^-tax relating"),              # sub-item of provision_taxation
+    re.compile(r"^deferred tax$"),              # sub-item of provision_taxation
+    re.compile(r"^\(c\) dividend distribution tax"),  # sub-item
+    re.compile(r"^mat credit"),                 # sub-item
+    re.compile(r"^less:"),                      # compound taxation block
 ]

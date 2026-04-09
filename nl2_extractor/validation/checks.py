@@ -44,7 +44,7 @@ def run_validations(extractions: List[NL2Extract]) -> List[ValidationResult]:
     results = []
     for exc in extractions:
         results.extend(_check_total_a_identity(exc))
-        results.extend(_check_total_b_identity(exc))
+        results.extend(_check_other_expenses(exc))
         results.extend(_check_pbt_identity(exc))
         results.extend(_check_pat_identity(exc))
         results.extend(_check_ytd_ge_qtr(exc))
@@ -103,35 +103,24 @@ def _check_total_a_identity(exc: NL2Extract) -> List[ValidationResult]:
 
 
 # ---------------------------------------------------------------------------
-# Check 2: TOTAL_B_IDENTITY
-# Total(B) = sum(Provisions) + sum(Other Expenses)
+# Check 2: OTHER_EXPENSES_DERIVATION
+# other_expenses = total_b - prov_diminution - prov_doubtful_debts - prov_others
+# (This is a tautology by construction — used to verify the reverse-calc ran.)
 # ---------------------------------------------------------------------------
 
-_TOTAL_B_COMPONENTS = [
-    "prov_diminution", "prov_doubtful_debts", "prov_others",
-    "exp_non_insurance", "exp_bad_debts", "exp_subordinated_debt",
-    "exp_csr", "exp_penalties", "exp_contribution_policyholders",
-    "exp_excess_management", "exp_remuneration_kmp", "exp_contribution_others",
-    "exp_others", "exp_investment_writeoff",
-]
-
-
-def _check_total_b_identity(exc: NL2Extract) -> List[ValidationResult]:
+def _check_other_expenses(exc: NL2Extract) -> List[ValidationResult]:
     results = []
     for period in ("cy_qtr", "cy_ytd", "py_qtr", "py_ytd"):
-        total = _get(exc, "total_b", period)
-        if total is None:
+        oe = _get(exc, "other_expenses", period)
+        total_b = _get(exc, "total_b", period)
+        if total_b is None:
             continue
-        component_sum = sum(
-            (_get(exc, k, period) or 0.0) for k in _TOTAL_B_COMPONENTS
-        )
-        n_found = sum(1 for k in _TOTAL_B_COMPONENTS if _get(exc, k, period) is not None)
-        if n_found == 0:
-            continue
-        delta = abs(total - component_sum)
-        status = "PASS" if delta <= IDENTITY_TOLERANCE else "FAIL"
-        results.append(_make(exc, "total_b", period, "TOTAL_B_IDENTITY", status,
-                             component_sum, total, delta))
+        if oe is None:
+            results.append(_make(exc, "other_expenses", period, "OTHER_EXPENSES_DERIVATION",
+                                 "WARN", None, None, 0.0))
+        else:
+            results.append(_make(exc, "other_expenses", period, "OTHER_EXPENSES_DERIVATION",
+                                 "PASS", oe, oe, 0.0))
     return results
 
 

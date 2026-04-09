@@ -75,26 +75,103 @@ def resolve_company_name(company_key: str, pdf_path: str, fallback: str = "") ->
 # Period column detection
 # ---------------------------------------------------------------------------
 
-# Patterns for the 4 NL-2 period header phrases
-_CY_QTR_RE = re.compile(
-    r"for\s+the\s+quarter\s+ended\s+(dec|sep|jun|mar|december|september|june|march)\s*\d{4}",
+# Quarter keyword pattern — matches "for [the] quarter|period [ended]" as well as
+# fiscal shorthand like "For Q3 2025-26" and plain "QUARTER ENDED ..."
+_QTR_KEYWORD_RE = re.compile(
+    r"(for\s+(the\s+)?quarter|for\s+q[1-4]|quarter\s+ended)",
     re.IGNORECASE,
 )
-_CY_YTD_RE = re.compile(
-    r"up\s+to\s+the\s+(period|quarter)\s+ended\s+(dec|sep|jun|mar|december|september|june|march)\s*\d{4}",
+# YTD keyword pattern — matches "up[to] [the] quarter|period" and fiscal "Upto Q3/9M"
+_YTD_KEYWORD_RE = re.compile(
+    r"(up\s*to\s+(the\s+)?(quarter|period)|upto\s+(the\s+)?(quarter|period)|"
+    r"up\s*to\s+q[1-4]|upto\s+q[1-4]|upto\s+\d+m\b|period\s+ended)",
     re.IGNORECASE,
 )
-_PY_QTR_RE = re.compile(r"for\s+the\s+quarter\s+ended", re.IGNORECASE)
-_PY_YTD_RE = re.compile(r"up\s+to\s+the\s+(period|quarter)\s+ended", re.IGNORECASE)
 
-# Bare year extractor — used to distinguish CY vs PY when both match the same pattern
-_YEAR_RE = re.compile(r'\b(20\d\d)\b')
+# Month abbreviation map for 2-digit year expansion
+_MONTH_ABBR_RE = re.compile(r'[A-Za-z]{3}[-\'](\d{2})\b')
+_FISCAL_YEAR_RE = re.compile(r'20(\d{2})-(\d{2})')
+_DATE_DDMMYYYY_RE = re.compile(r'\d{1,2}\.\d{1,2}\.(20\d{2})')
+_BARE_YEAR_RE = re.compile(r'\b(20\d{2})\b')
 
 
-def _extract_year(text: str) -> Optional[int]:
-    """Extract the last 4-digit year from a cell text."""
-    m = _YEAR_RE.findall(str(text or ""))
-    return int(m[-1]) if m else None
+def _resolve_period_cell(text: str) -> Optional[int]:
+    """
+    Extract a 4-digit year from a period header cell string.
+    Tries parsers in priority order; returns None if no year can be resolved.
+
+    Priority:
+      1. Bare 4-digit year (20xx)
+      2. DD.MM.YYYY date format
+      3. Mon-YY / Mon'YY abbreviation (Dec-25 → 2025)
+      4. Fiscal year 20YY-ZZ → anchor year 20YY
+      5. Returns None (Q3 with no year, etc.)
+    """
+    # 1. Bare 4-digit year — most common
+    m = _BARE_YEAR_RE.findall(text)
+    if m:
+        return int(m[-1])
+    # 2. DD.MM.YYYY
+    m = _DATE_DDMMYYYY_RE.search(text)
+    if m:
+        return int(m.group(1))
+    # 3. Mon-YY / Mon'YY
+    m = _MONTH_ABBR_RE.search(text)
+    if m:
+        yy = int(m.group(1))
+        return yy + 2000 if yy < 50 else yy + 1900
+    # 4. Fiscal year 20YY-ZZ
+    m = _FISCAL_YEAR_RE.search(text)
+    if m:
+        return int("20" + m.group(1))
+    return None
+
+
+def _expand_stacked_rows(table: list) -> list:
+    """
+    Expand rows where pdfplumber collapsed multiple P&L rows into a single
+    newline-separated cell (e.g. "income from investments\n(a) interest...\n(b) profit...").
+
+    Heuristic: if col 1 (label col) contains ≥2 newlines AND any sub-line
+    matches a known NL2 alias, split on newlines and emit one virtual row per sub-label.
+    Falls back to col 0 if col 1 is blank.
+    """
+    expanded = []
+    for row in table:
+        # Find the label column (prefer col 1, fallback col 0)
+        label_col = None
+        best_parts: list = []
+        for ci in range(min(3, len(row))):
+            cell = str(row[ci] or "")
+            if cell.count('\n') >= 2:
+                parts = [p.strip() for p in cell.split('\n') if p.strip()]
+                if any(NL2_ROW_ALIASES.get(re.sub(r'\s+', ' ', p.lower()).rstrip('*').strip())
+                       for p in parts):
+                    label_col = ci
+                    best_parts = parts
+                    break
+
+        if label_col is None or len(best_parts) < 2:
+            expanded.append(row)
+            continue
+
+        # Split data columns at the same positions
+        data_cols: Dict[int, list] = {}
+        for ci in range(len(row)):
+            if ci == label_col:
+                continue
+            cell_str = str(row[ci] or "")
+            parts = [p.strip() for p in cell_str.split('\n') if p.strip()]
+            data_cols[ci] = parts
+
+        for idx, sub_label in enumerate(best_parts):
+            virtual_row = [""] * len(row)
+            virtual_row[label_col] = sub_label
+            for ci, parts in data_cols.items():
+                virtual_row[ci] = parts[idx] if idx < len(parts) else ""
+            expanded.append(virtual_row)
+
+    return expanded
 
 
 def detect_period_columns(table) -> Dict[str, int]:
@@ -105,47 +182,62 @@ def detect_period_columns(table) -> Dict[str, int]:
     mapping to 0-based column indices. Missing periods map to None.
 
     Strategy:
-      1. Find all cells matching "For the quarter ended ..." and
-         "Up to the period/quarter ended ...".
-      2. Among those, the ones with the higher year = CY; lower year = PY.
-      3. Within each period-type pair, the quarter cell comes before the YTD cell.
+      1. Classify each cell as QTR or YTD via keyword patterns.
+      2. Extract a year via _resolve_period_cell (handles 4-digit, DD.MM.YYYY,
+         Mon-YY, fiscal 20YY-ZZ formats).
+      3. CY = max year, PY = min year. If no year found, fall back to column
+         position (first QTR = cy_qtr, second QTR = py_qtr, etc.).
     """
     period_cols: Dict[str, Optional[int]] = {
         "cy_qtr": None, "cy_ytd": None,
         "py_qtr": None, "py_ytd": None,
     }
 
-    qtr_candidates: List[Tuple[int, int, int]] = []   # (col_idx, year, row_idx)
+    qtr_candidates: List[Tuple[int, int, int]] = []   # (col_idx, year_or_0, row_idx)
     ytd_candidates: List[Tuple[int, int, int]] = []
 
     for ri, row in enumerate(table[:5]):
         for ci, cell in enumerate(row):
+            # Skip the serial-number and label columns — their cells can accidentally
+            # contain period keywords if the form title is merged into col 0/1.
+            if ci < 2:
+                continue
             if not cell:
                 continue
             text = str(cell).replace("\n", " ").strip()
-            year = _extract_year(text)
-            if year is None:
+            is_qtr = bool(_QTR_KEYWORD_RE.search(text))
+            is_ytd = bool(_YTD_KEYWORD_RE.search(text))
+            if not is_qtr and not is_ytd:
                 continue
-            if _CY_QTR_RE.search(text) or (re.search(r"for\s+the\s+quarter\s+ended", text, re.I) and year):
-                qtr_candidates.append((ci, year, ri))
-            elif _CY_YTD_RE.search(text) or (re.search(r"up\s+to\s+the\s+(period|quarter)\s+ended", text, re.I) and year):
+            year = _resolve_period_cell(text) or 0
+            # "Up to the Quarter Ended" matches both; YTD takes priority
+            if is_ytd:
                 ytd_candidates.append((ci, year, ri))
+            else:
+                qtr_candidates.append((ci, year, ri))
 
     if not qtr_candidates and not ytd_candidates:
         return period_cols
 
-    # Assign CY = max year, PY = min year
+    # Assign CY = max year, PY = min year; if year=0 use column order
     if qtr_candidates:
-        qtr_candidates.sort(key=lambda x: x[1], reverse=True)
+        qtr_candidates.sort(key=lambda x: (x[2], x[0]))  # stable: row then col order
+        if qtr_candidates[0][1] > 0:
+            qtr_candidates.sort(key=lambda x: x[1], reverse=True)
         period_cols["cy_qtr"] = qtr_candidates[0][0]
         if len(qtr_candidates) >= 2:
             period_cols["py_qtr"] = qtr_candidates[-1][0]
 
     if ytd_candidates:
-        ytd_candidates.sort(key=lambda x: x[1], reverse=True)
+        ytd_candidates.sort(key=lambda x: (x[2], x[0]))
+        if ytd_candidates[0][1] > 0:
+            ytd_candidates.sort(key=lambda x: x[1], reverse=True)
         period_cols["cy_ytd"] = ytd_candidates[0][0]
         if len(ytd_candidates) >= 2:
             period_cols["py_ytd"] = ytd_candidates[-1][0]
+
+    if any(v is not None for v in period_cols.values()) and qtr_candidates and qtr_candidates[0][1] == 0:
+        logger.warning("Period columns detected by position only (no year found in header)")
 
     return period_cols
 
@@ -160,6 +252,9 @@ _SECTION_TRIGGERS = {
     "income from investments":      "investments",
     "provisions (other than":       "provisions",
     "other expenses":               "expenses",
+    "(b) other expenses":           "expenses",
+    "(c) other expenses":           "expenses",
+    "b. other expenses":            "expenses",
     "appropriations":               "appropriations",
 }
 
@@ -224,34 +319,35 @@ def detect_pl_rows(table) -> Dict[int, str]:
         if skip:
             continue
 
-        # Ambiguous labels resolved by section context
-        if label in ("(c) others", "others"):
+        # Provisions "others" — section-aware disambiguation
+        if label in ("(c) others", "(c) others (to be specified)",
+                     "(c) others (please specify)"):
             if section == "provisions":
                 pl_rows[ri] = "prov_others"
-            # In expenses section "(c) others" does not appear — skip if seen
+            # Anything else (expenses section sub-items) is ignored — no longer extracted
             continue
 
-        if label == "(iii) others":
-            if section == "expenses":
-                pl_rows[ri] = "exp_contribution_others"
-            continue
-
-        if label == "(g) others":
-            if section == "expenses":
-                pl_rows[ri] = "exp_others"
-            continue
-
-        # Standard alias lookup
+        # Standard alias lookup — runs BEFORE section-skip so that canonical rows
+        # like total_b, profit_before_tax, profit_after_tax are always captured even
+        # when section state is still "expenses".
         key = NL2_ROW_ALIASES.get(label)
         if key is not None:
             pl_rows[ri] = key
-        else:
-            # Try partial-match fallback for long labels (e.g. footnote asterisks
-            # or minor OCR variants not yet in the alias table)
-            for alias, canonical in NL2_ROW_ALIASES.items():
-                if label.startswith(alias) or alias.startswith(label[:30]):
-                    pl_rows[ri] = canonical
-                    break
+            continue
+
+        # Partial-match fallback for long labels with footnote asterisks / OCR variants
+        matched = False
+        for alias, canonical in NL2_ROW_ALIASES.items():
+            if label.startswith(alias) or alias.startswith(label[:30]):
+                pl_rows[ri] = canonical
+                matched = True
+                break
+        if matched:
+            continue
+
+        # Expense sub-items with no alias: skip — other_expenses is reverse-calculated
+        if section == "expenses":
+            continue
 
     return pl_rows
 
@@ -324,32 +420,101 @@ def parse_header_driven_nl2(
 
     try:
         with pdfplumber.open(pdf_path) as pdf:
-            for page in get_nl2_pages(pdf):
+            nl2_pages = get_nl2_pages(pdf)
+            # Pass 1: try each table on each page
+            found = False
+            for page in nl2_pages:
+                if found:
+                    break
                 tables = page.extract_tables()
                 if not tables:
                     continue
                 for table in tables:
                     if not table or len(table) < 3:
                         continue
-                    period_cols = detect_period_columns(table)
-                    # Need at least cy_ytd to proceed
+                    expanded = _expand_stacked_rows(table)
+                    period_cols = detect_period_columns(expanded)
                     if period_cols.get("cy_ytd") is None:
                         continue
-                    pl_rows = detect_pl_rows(table)
+                    pl_rows = detect_pl_rows(expanded)
                     if not pl_rows:
                         continue
-                    extract_nl2_grid(table, pl_rows, period_cols, extract.data)
+                    extract_nl2_grid(expanded, pl_rows, period_cols, extract.data)
                     logger.info(
                         f"Extracted {len(pl_rows)} P&L rows from "
                         f"{Path(pdf_path).name} | period_cols={period_cols}"
                     )
-                    # NL-2 is typically a single table — stop after first match
-                    return extract
+                    found = True
+                    break
 
+            # Pass 2: if still no data, scan raw page text for period keywords and
+            # re-try table extraction with a synthetic header row injected from text.
+            # This handles filings where the period header sits outside the table grid.
+            if not found:
+                for page in nl2_pages:
+                    raw_text = page.extract_text() or ""
+                    # Build a synthetic 1-row header from any line that has period keywords
+                    header_cells = []
+                    for line in raw_text.splitlines():
+                        line = line.strip()
+                        if _QTR_KEYWORD_RE.search(line) or _YTD_KEYWORD_RE.search(line):
+                            header_cells.append(line)
+                    if not header_cells:
+                        continue
+                    tables = page.extract_tables()
+                    if not tables:
+                        continue
+                    for table in tables:
+                        if not table or len(table) < 3:
+                            continue
+                        expanded = _expand_stacked_rows(table)
+                        # Inject synthetic header row and try period detection on it
+                        synthetic_row = ([""] * len(expanded[0]))
+                        # Distribute header cells across non-label columns
+                        data_cols = [ci for ci in range(len(synthetic_row)) if ci > 1]
+                        for i, hcell in enumerate(header_cells):
+                            if i < len(data_cols):
+                                synthetic_row[data_cols[i]] = hcell
+                        augmented = [synthetic_row] + expanded
+                        period_cols = detect_period_columns(augmented)
+                        if period_cols.get("cy_ytd") is None:
+                            continue
+                        pl_rows = detect_pl_rows(expanded)
+                        if not pl_rows:
+                            continue
+                        extract_nl2_grid(expanded, pl_rows, period_cols, extract.data)
+                        logger.info(
+                            f"Extracted {len(pl_rows)} P&L rows (text-header fallback) from "
+                            f"{Path(pdf_path).name} | period_cols={period_cols}"
+                        )
+                        found = True
+                        break
+                    if found:
+                        break
     except Exception as e:
         logger.error(f"parse_header_driven_nl2 failed for {pdf_path}: {e}")
+
+    # Reverse-calculate other_expenses = total_b - sum(provisions)
+    _derive_other_expenses(extract.data)
 
     if not extract.data.data:
         logger.warning(f"No P&L data extracted from {pdf_path}")
 
     return extract
+
+
+def _derive_other_expenses(nl2_data: "NL2Data") -> None:
+    """
+    other_expenses = total_b - prov_diminution - prov_doubtful_debts - prov_others
+
+    Computed for all four period slots. Absent provision items default to 0.
+    """
+    for period in ("cy_qtr", "cy_ytd", "py_qtr", "py_ytd"):
+        total_b = nl2_data.data.get("total_b", {}).get(period)
+        if total_b is None:
+            continue
+        prov_dim = nl2_data.data.get("prov_diminution", {}).get(period) or 0
+        prov_dbt = nl2_data.data.get("prov_doubtful_debts", {}).get(period) or 0
+        prov_oth = nl2_data.data.get("prov_others", {}).get(period) or 0
+        other_exp = total_b - prov_dim - prov_dbt - prov_oth
+        nl2_data.data.setdefault("other_expenses", {})[period] = round(other_exp, 4)
