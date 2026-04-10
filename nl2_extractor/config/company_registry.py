@@ -103,6 +103,9 @@ COMPANY_MAP = {
     "indusind": "indusind_general",
     "indusind general": "indusind_general",
     "indusind general insurance": "indusind_general",
+    "galaxy health": "galaxy_health",
+    "galaxyhealth": "galaxy_health",
+    "galaxy health and allied": "galaxy_health",
 }
 
 # ---------------------------------------------------------------------------
@@ -142,6 +145,7 @@ COMPANY_DISPLAY_NAMES = {
     "magma_general":        "Magma General Insurance Limited",
     "kshema_general":       "Kshema General Insurance Limited",
     "indusind_general":     "IndusInd General Insurance Company Limited",
+    "galaxy_health":        "Galaxy Health and Allied Insurance Company Limited",
 }
 
 # ---------------------------------------------------------------------------

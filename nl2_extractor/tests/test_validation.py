@@ -14,7 +14,7 @@ import os
 from extractor.models import NL2Extract, NL2Data
 from validation.checks import (
     _check_total_a_identity,
-    _check_total_b_identity,
+    _check_other_expenses,
     _check_pbt_identity,
     _check_pat_identity,
     _check_ytd_ge_qtr,
@@ -81,16 +81,11 @@ def test_total_a_identity_skips_when_total_a_missing():
 # Total(B) Identity
 # ---------------------------------------------------------------------------
 
-def test_total_b_identity_pass():
+def test_other_expenses_derivation_pass():
     exc = _exc()
-    _set(exc, "prov_doubtful_debts", cy_ytd=22.0)
-    _set(exc, "exp_non_insurance",   cy_ytd=1092.0)
-    _set(exc, "exp_bad_debts",       cy_ytd=23.0)
-    _set(exc, "exp_csr",             cy_ytd=3246.0)
-    _set(exc, "exp_remuneration_kmp",cy_ytd=2589.0)
-    # sum = 22+1092+23+3246+2589 = 6972
+    _set(exc, "other_expenses",      cy_ytd=6972.0)
     _set(exc, "total_b",             cy_ytd=6972.0)
-    results = _check_total_b_identity(exc)
+    results = _check_other_expenses(exc)
     assert any(r.period == "cy_ytd" and r.status == "PASS" for r in results)
 
 

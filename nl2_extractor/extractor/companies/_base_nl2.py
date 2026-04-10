@@ -78,13 +78,13 @@ def resolve_company_name(company_key: str, pdf_path: str, fallback: str = "") ->
 # Quarter keyword pattern — matches "for [the] quarter|period [ended]" as well as
 # fiscal shorthand like "For Q3 2025-26" and plain "QUARTER ENDED ..."
 _QTR_KEYWORD_RE = re.compile(
-    r"(for\s+(the\s+)?quarter|for\s+q[1-4]|quarter\s+ended)",
+    r"(for\b.*?\bquarter|for\b.*?\bq[1-4]|quarter\b.*?\bended)",
     re.IGNORECASE,
 )
 # YTD keyword pattern — matches "up[to] [the] quarter|period" and fiscal "Upto Q3/9M"
 _YTD_KEYWORD_RE = re.compile(
-    r"(up\s*to\s+(the\s+)?(quarter|period)|upto\s+(the\s+)?(quarter|period)|"
-    r"up\s*to\s+q[1-4]|upto\s+q[1-4]|upto\s+\d+m\b|period\s+ended)",
+    r"(up\s*to\b.*?\b(quarter|period)|upto\b.*?\b(quarter|period)|"
+    r"up\s*to\b.*?\bq[1-4]|upto\b.*?\bq[1-4]|upto\b.*?\b\d+m\b|period\b.*?\bended)",
     re.IGNORECASE,
 )
 
