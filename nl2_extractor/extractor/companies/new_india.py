@@ -138,19 +138,30 @@ def _detect_period_columns_ni(table: list) -> Dict[str, Optional[int]]:
 
 
 def _derive_other_income_ni(nl2_data: NL2Data) -> None:
-    """Specialized identity for New India Stacked layout."""
+    """Derive Other Income for New India's P&L layout.
+
+    Total A = Operating Profit (Fire + Marine + Misc)
+             + Investment Income (Interest + Profit - Loss +/- Amort)
+             + Other Income
+
+    The previous formula omitted operating profit, producing a delta equal
+    to op_sum in every TOTAL_A_DERIVATION check.
+    """
     for period in ("cy_qtr", "cy_ytd", "py_qtr", "py_ytd"):
         total_a_pdf = nl2_data.data.get("total_a", {}).get(period)
         if total_a_pdf is None:
             continue
 
-        inv_int = nl2_data.data.get("inv_interest_dividend_rent", {}).get(period) or 0
-        inv_prof = nl2_data.data.get("inv_profit_on_sale", {}).get(period) or 0
-        inv_loss = nl2_data.data.get("inv_loss_on_sale", {}).get(period) or 0
-        inv_amort = nl2_data.data.get("inv_amortization", {}).get(period) or 0
-        
-        # New India PDF: Total A = Interest + Profit + Loss (sign-aware) + Amort (sign-aware) + Other Income
+        op_fire   = nl2_data.data.get("op_fire",            {}).get(period) or 0
+        op_marine = nl2_data.data.get("op_marine",          {}).get(period) or 0
+        op_misc   = nl2_data.data.get("op_miscellaneous",   {}).get(period) or 0
+        inv_int   = nl2_data.data.get("inv_interest_dividend_rent", {}).get(period) or 0
+        inv_prof  = nl2_data.data.get("inv_profit_on_sale", {}).get(period) or 0
+        inv_loss  = nl2_data.data.get("inv_loss_on_sale",   {}).get(period) or 0
+        inv_amort = nl2_data.data.get("inv_amortization",   {}).get(period) or 0
+
+        op_sum  = op_fire + op_marine + op_misc
         inv_sum = inv_int + inv_prof + inv_loss + inv_amort
-        other_inc = total_a_pdf - inv_sum
-        
+        other_inc = total_a_pdf - op_sum - inv_sum
+
         nl2_data.data.setdefault("other_income", {})[period] = round(other_inc, 4)
