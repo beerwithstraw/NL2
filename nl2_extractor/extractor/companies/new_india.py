@@ -29,8 +29,9 @@ from extractor.companies._base_nl2 import (
 
 logger = logging.getLogger(__name__)
 
-# Specialized year extractor for New India
-_NI_YEAR_RE = re.compile(r'31\.12\.(20\d{2})')
+# Specialized year extractor for New India — matches any DD.MM.YYYY date
+# (Q3 uses 31.12.YYYY, Q1 uses 30.06.YYYY, Q2 uses 30.09.YYYY)
+_NI_YEAR_RE = re.compile(r'\d{2}\.\d{2}\.(20\d{2})')
 
 def parse_new_india_nl2(pdf_path: str, company_key: str, quarter: str = "", year: str = "") -> NL2Extract:
     """Entry point for New India Assurance NL-2 extraction (Signature-Matched)."""
