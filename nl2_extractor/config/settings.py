@@ -39,7 +39,10 @@ QUARTER_TO_FY = {
 }
 
 # --- Master Sheet Column Order (fixed — do not reorder) ---
-# NL2 has 4 data columns (CY_Qtr, CY_YTD, PY_Qtr, PY_YTD) plus Hierarchy_Depth.
+# NL2 is long-format: one row per (company, PL item, period).
+# Year_Info = "Current Year" | "Previous Year"
+# Quarter_Info = "For the Quarter" | "Upto the Quarter"
+# Year = calendar year of that period (e.g. 2026 for CY, 2025 for PY in FY25-26)
 MASTER_COLUMNS = [
     "PL_PARTICULARS",               # A
     "Grouped_PL",                   # B
@@ -54,11 +57,8 @@ MASTER_COLUMNS = [
     "Sector",                       # K
     "Industry_Competitors",         # L
     "GI_Companies",                 # M
-    "CY_Qtr",                       # N
-    "CY_YTD",                       # O
-    "PY_Qtr",                       # P
-    "PY_YTD",                       # Q
-    "Source_File",                  # R
+    "Value",                        # N
+    "Source_File",                  # O
 ]
 
 # --- Excel Formatting ---

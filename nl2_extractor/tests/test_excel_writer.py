@@ -59,10 +59,14 @@ def test_master_data_column_headers(tmp_path):
     header_row = [ws.cell(row=1, column=c).value for c in range(1, len(MASTER_COLUMNS) + 1)]
     assert "PL_PARTICULARS" in header_row
     assert "Hierarchy_Depth" in header_row
-    assert "CY_Qtr" in header_row
-    assert "CY_YTD" in header_row
-    assert "PY_Qtr" in header_row
-    assert "PY_YTD" in header_row
+    assert "Year_Info" in header_row
+    assert "Quarter_Info" in header_row
+    assert "Value" in header_row
+    # Wide-format columns must NOT be present
+    assert "CY_Qtr" not in header_row
+    assert "CY_YTD" not in header_row
+    assert "PY_Qtr" not in header_row
+    assert "PY_YTD" not in header_row
     # NL6 columns must NOT be present
     assert "Gross_Commission" not in header_row
     assert "Total_Channel" not in header_row
@@ -70,7 +74,7 @@ def test_master_data_column_headers(tmp_path):
 
 
 def test_master_data_has_all_row_order_entries(tmp_path):
-    """Master_Data must have one row per NL2_ROW_ORDER data entry (depth != -1)."""
+    """Master_Data must have 4 rows per NL2_ROW_ORDER data entry (depth != -1) — long format."""
     from config.row_registry import NL2_ROW_ORDER, NL2_ROW_DEPTH
     output_file = tmp_path / "rows.xlsx"
     extract = NL2Extract(
@@ -85,9 +89,9 @@ def test_master_data_has_all_row_order_entries(tmp_path):
     wb = load_workbook(output_file)
     ws = wb["Master_Data"]
     row_count = ws.max_row - 1  # subtract header
-    expected = sum(1 for k in NL2_ROW_ORDER if NL2_ROW_DEPTH.get(k, 1) != -1)
+    expected = 4 * sum(1 for k in NL2_ROW_ORDER if NL2_ROW_DEPTH.get(k, 1) != -1)
     assert row_count == expected, (
-        f"Expected {expected} data rows (excluding section headers), got {row_count}"
+        f"Expected {expected} data rows (4 per item, excluding section headers), got {row_count}"
     )
 
 
@@ -108,13 +112,13 @@ def test_hierarchy_depth_column_written(tmp_path):
 
 
 def test_cy_ytd_value_written(tmp_path):
-    """CY_YTD value must appear in Master_Data."""
+    """CY YTD value must appear in the Value column of Master_Data."""
     output_file = tmp_path / "values.xlsx"
     save_workbook([_make_extract("profit_before_tax", 211342.0)], str(output_file))
     wb = load_workbook(output_file)
     ws = wb["Master_Data"]
-    cy_ytd_col = MASTER_COLUMNS.index("CY_YTD") + 1
-    values = [ws.cell(row=r, column=cy_ytd_col).value for r in range(2, ws.max_row + 1)]
+    val_col = MASTER_COLUMNS.index("Value") + 1
+    values = [ws.cell(row=r, column=val_col).value for r in range(2, ws.max_row + 1)]
     assert 211342.0 in values
 
 

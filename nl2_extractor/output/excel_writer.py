@@ -2,7 +2,9 @@
 Excel Writer for NL-2-B-PL Profit and Loss Account.
 
 Output structure:
-  - Master_Data sheet: one row per company per P&L line item
+  - Master_Data sheet: four rows per company per P&L line item (long format)
+    One row each for: CY For the Quarter, CY Upto the Quarter,
+                      PY For the Quarter, PY Upto the Quarter
   - Per-company verification sheets: P&L rows x 4 period columns
   - _meta sheet: run metadata
 """
@@ -40,16 +42,41 @@ _SECTION_FONT = Font(bold=True, color="FFFFFF")
 _SECTION_FILL = PatternFill(start_color="1F497D", end_color="1F497D", fill_type="solid")
 
 
-def _year_code_to_fy_end(year_code: str) -> str:
-    """'202526' -> '2025' (FY end year for CY), '202425' -> '2024'."""
+def _cy_year(year_code: str) -> str:
+    """Return the Current Year calendar year from a year code.
+    '20252026' -> '2026',  '202526' -> '2026'
+    """
     s = str(year_code).strip()
+    if len(s) == 8:
+        return s[4:]           # "20252026" -> "2026"
     if len(s) == 6:
-        return f"20{s[2:4]}"  # first two digits after "20" = FY start year
+        return f"20{s[4:]}"   # "202526"   -> "2026"
     return s
 
 
+def _py_year(year_code: str) -> str:
+    """Return the Previous Year calendar year from a year code.
+    '20252026' -> '2025',  '202526' -> '2025'
+    """
+    s = str(year_code).strip()
+    if len(s) == 8:
+        return s[:4]           # "20252026" -> "2025"
+    if len(s) == 6:
+        return f"20{s[2:4]}"  # "202526"   -> "2025"
+    return s
+
+
+# Long-format period rows: (Year_Info, Quarter_Info, data_key)
+_PERIOD_ROWS = [
+    ("Current Year",  "For the Quarter",   "cy_qtr"),
+    ("Current Year",  "Upto the Quarter",  "cy_ytd"),
+    ("Previous Year", "For the Quarter",   "py_qtr"),
+    ("Previous Year", "Upto the Quarter",  "py_ytd"),
+]
+
+
 def _write_master_data(ws, extractions: List[NL2Extract], existing_rows: Optional[List[list]] = None):
-    """Write the Master_Data sheet — one row per company per P&L line item."""
+    """Write the Master_Data sheet — four rows per company per P&L line item (long format)."""
     # Header
     for col_idx, col_name in enumerate(MASTER_COLUMNS, 1):
         cell = ws.cell(row=1, column=col_idx, value=col_name)
@@ -67,56 +94,53 @@ def _write_master_data(ws, extractions: List[NL2Extract], existing_rows: Optiona
                 if col_idx > len(MASTER_COLUMNS):
                     break
                 cell = ws.cell(row=current_row, column=col_idx, value=val)
-                col_name = MASTER_COLUMNS[col_idx - 1]
-                if col_name in ("CY_Qtr", "CY_YTD", "PY_Qtr", "PY_YTD"):
+                if MASTER_COLUMNS[col_idx - 1] == "Value":
                     cell.number_format = NUMBER_FORMAT
             current_row += 1
 
     # Write new extractions
     for extract in extractions:
-        meta = get_metadata(extract.company_key)
-        fy_start = _year_code_to_fy_end(extract.year) if extract.year else ""
+        meta   = get_metadata(extract.company_key)
+        cy_yr  = _cy_year(extract.year) if extract.year else ""
+        py_yr  = _py_year(extract.year) if extract.year else ""
 
         for pl_key in NL2_ROW_ORDER:
             depth = NL2_ROW_DEPTH.get(pl_key, 1)
             if depth == -1:
-                # Section headers are display-only; they carry no data
-                continue
+                continue  # section headers carry no data
 
             pl_data = extract.data.data.get(pl_key, {})
 
-            row_values = {
-                "PL_PARTICULARS":       get_pl_particulars(pl_key),
-                "Grouped_PL":           get_grouped_pl(pl_key),
-                "Hierarchy_Depth":      depth,
-                "Company_Name":         meta["company_name"],
-                "Company":              meta["sorted_company"],
-                "NL":                   extract.form_type,
-                "Quarter":              extract.quarter,
-                "Year":                 fy_start,
-                "Year_Info":            "Current Year",
-                "Quarter_Info":         f"Q{extract.quarter[-1]} FY{extract.year}" if extract.year else extract.quarter,
-                "Sector":               meta["sector"],
-                "Industry_Competitors": meta["competitors"],
-                "GI_Companies":         "GI Company",
-                "CY_Qtr":               pl_data.get("cy_qtr"),
-                "CY_YTD":               pl_data.get("cy_ytd"),
-                "PY_Qtr":               pl_data.get("py_qtr"),
-                "PY_YTD":               pl_data.get("py_ytd"),
-                "Source_File":          extract.source_file,
-            }
+            for year_info, quarter_info, data_key in _PERIOD_ROWS:
+                year = cy_yr if year_info == "Current Year" else py_yr
+                row_values = {
+                    "PL_PARTICULARS":       get_pl_particulars(pl_key),
+                    "Grouped_PL":           get_grouped_pl(pl_key),
+                    "Hierarchy_Depth":      depth,
+                    "Company_Name":         meta["company_name"],
+                    "Company":              meta["sorted_company"],
+                    "NL":                   extract.form_type,
+                    "Quarter":              extract.quarter,
+                    "Year":                 year,
+                    "Year_Info":            year_info,
+                    "Quarter_Info":         quarter_info,
+                    "Sector":               meta["sector"],
+                    "Industry_Competitors": meta["competitors"],
+                    "GI_Companies":         "GI Company",
+                    "Value":                pl_data.get(data_key),
+                    "Source_File":          extract.source_file,
+                }
 
-            for col_idx, col_name in enumerate(MASTER_COLUMNS, 1):
-                val = row_values.get(col_name)
-                cell = ws.cell(row=current_row, column=col_idx, value=val)
-                if col_name in ("CY_Qtr", "CY_YTD", "PY_Qtr", "PY_YTD"):
-                    cell.number_format = NUMBER_FORMAT
-                # Bold + fill for summary rows (depth=0)
-                if depth == 0:
-                    cell.font = _BOLD_FONT
-                    cell.fill = _SUMMARY_FILL
+                for col_idx, col_name in enumerate(MASTER_COLUMNS, 1):
+                    val = row_values.get(col_name)
+                    cell = ws.cell(row=current_row, column=col_idx, value=val)
+                    if col_name == "Value":
+                        cell.number_format = NUMBER_FORMAT
+                    if depth == 0:
+                        cell.font = _BOLD_FONT
+                        cell.fill = _SUMMARY_FILL
 
-            current_row += 1
+                current_row += 1
 
 
 def _write_verification_sheet(ws, extract: NL2Extract):
