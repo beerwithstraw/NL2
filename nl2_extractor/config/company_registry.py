@@ -153,10 +153,11 @@ COMPANY_DISPLAY_NAMES = {
 # Add new companies here as parsers are implemented.
 # ---------------------------------------------------------------------------
 DEDICATED_PARSER = {
-    "bajaj_allianz": "parse_bajaj_nl2",
-    "acko": "acko",
-    "ecgc": "ecgc",
-    "new_india": "new_india",
+    "bajaj_allianz":   "parse_bajaj_nl2",
+    "acko":            "parse_acko_nl2",
+    "ecgc":            "parse_ecgc_nl2",
+    "new_india":       "parse_new_india_nl2",
+    "narayana_health": "parse_narayana_nl2",
 }
 
 # ---------------------------------------------------------------------------

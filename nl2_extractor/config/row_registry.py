@@ -147,11 +147,15 @@ NL2_ROW_ALIASES = {
     "interest , dividend & rent - gross":                       "inv_interest_dividend_rent",
     "interest , dividend & rent  - gross":                      "inv_interest_dividend_rent",
     "(a) interest , dividend & rent - gross":                   "inv_interest_dividend_rent",
+    "(a) interest and dividend \u2013 gross of tds":           "inv_interest_dividend_rent",
+    "interest and dividend \u2013 gross of tds":               "inv_interest_dividend_rent",
 
     # inv_profit_on_sale
     "(b) profit on sale of investments":                        "inv_profit_on_sale",
     "profit on sale of investments":                            "inv_profit_on_sale",
     "(b) profit on sale / redemption of investments":           "inv_profit_on_sale",
+    "(b) profit/ (loss) on sale of investments":                "inv_profit_on_sale",
+    "profit/ (loss) on sale of investments":                    "inv_profit_on_sale",
 
     # inv_loss_on_sale
     "(c) loss on sale/ redemption of investments":              "inv_loss_on_sale",
@@ -181,6 +185,8 @@ NL2_ROW_ALIASES = {
     "amortization of premium":                                  "inv_amortization",
 
     # other_income
+    "(c) misc income":                                          "other_income",
+    "misc income":                                              "other_income",
     "profit / (loss) on sale of assets":                        "other_income",
     "recovery of bad debts written off":                        "other_income",
     "other income - miscellaneous income":                      "other_income",
@@ -225,6 +231,8 @@ NL2_ROW_ALIASES = {
     # prov_doubtful_debts
     "(b) for doubtful debts":                                   "prov_doubtful_debts",
     "for doubtful debts":                                       "prov_doubtful_debts",
+    "(b) for doubtful debts/investments":                       "prov_doubtful_debts",
+    "for doubtful debts/investments":                           "prov_doubtful_debts",
 
     # NOTE: "(c) others" (prov_others) is OMITTED — section-aware in detect_pl_rows()
 
@@ -305,6 +313,8 @@ NL2_ROW_ALIASES = {
     "final dividend paid":                                      "approp_final_dividend",
 
     # approp_transfer_reserves
+    "(c) transfer to contingency reserve for unexpired risks":  "approp_transfer_reserves",
+    "(d) transfer to general reserve":                          "approp_transfer_reserves",
     "(c) transfer to any reserves or other accounts (to be specified)": "approp_transfer_reserves",
     "(c) transfer to any reserves or other accounts ( to be specified )": "approp_transfer_reserves",
     "(c) transfer to any reserves or other accounts":           "approp_transfer_reserves",
