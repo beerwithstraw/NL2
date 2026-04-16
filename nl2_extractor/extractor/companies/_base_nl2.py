@@ -81,9 +81,10 @@ _QTR_KEYWORD_RE = re.compile(
     r"(for\b.*?\bquarter|for\b.*?\bq[1-4]|quarter\b.*?\bended)",
     re.IGNORECASE,
 )
-# YTD keyword pattern — matches "up[to] [the] quarter|period" and fiscal "Upto Q3/9M"
+# YTD keyword pattern — matches "up[to] [the] quarter|period|H1|H2" and fiscal "Upto Q3/9M"
+# H1/H2 covers half-year filings (e.g. ICICI Lombard Q2: "Upto H1 2025-26")
 _YTD_KEYWORD_RE = re.compile(
-    r"(up\s*to\b.*?\b(quarter|period)|upto\b.*?\b(quarter|period)|"
+    r"(up\s*to\b.*?\b(quarter|period|h[12])|upto\b.*?\b(quarter|period|h[12])|"
     r"up\s*to\b.*?\bq[1-4]|upto\b.*?\bq[1-4]|upto\b.*?\b\d+m\b|period\b.*?\bended)",
     re.IGNORECASE,
 )
