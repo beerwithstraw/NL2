@@ -155,7 +155,9 @@ NL2_ROW_ALIASES = {
     "profit on sale of investments":                            "inv_profit_on_sale",
     "(b) profit on sale / redemption of investments":           "inv_profit_on_sale",
     "(b) profit/ (loss) on sale of investments":                "inv_profit_on_sale",
+    "(b) profit/(loss) on sale of investments":                 "inv_profit_on_sale",
     "profit/ (loss) on sale of investments":                    "inv_profit_on_sale",
+    "profit/(loss) on sale of investments":                     "inv_profit_on_sale",
 
     # inv_loss_on_sale
     "(c) loss on sale/ redemption of investments":              "inv_loss_on_sale",
@@ -177,6 +179,7 @@ NL2_ROW_ALIASES = {
     "(d) amortization of premium/ discount on investments":     "inv_amortization",
     "(d) amortization of premium/discount on investments":      "inv_amortization",
     "(c) amortization of premium / discount on investments":    "inv_amortization",
+    "(c) amortisation of premium/discount on investments":      "inv_amortization",
     "(d) less: amortization of premium/discount on investments": "inv_amortization",
     "(d) amortization of (premium) / discount on investments":   "inv_amortization",
     "(d) amortization of premium / (discount) on investments":   "inv_amortization",
@@ -200,6 +203,8 @@ NL2_ROW_ALIASES = {
     "miscellaneous income":                                     "other_income",
     "c) miscellaneous income":                                  "other_income",
     "other income (i) profit/loss on sale of fixed assets, (ii) exchange gain/loss, (iii) old unclaimed balance written back, (iv) misc (like transfer fee, duplicate fee) (v) int on income tax refund": "other_income",
+    "(a) gain/(loss) on foreign exchange fluctuation":          "other_income",
+    "gain/(loss) on foreign exchange fluctuation":              "other_income",
     "(a) interest on income tax refund":                        "other_income",
     "(b) interest on income tax refund":                        "other_income",
     "(a) interest income on tax refund":                        "other_income",
