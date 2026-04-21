@@ -10,6 +10,8 @@ fiscal_years:
   - FY2026
 
 quarters:
+  - Q1
+  - Q2
   - Q3
 
 # Full path to the master Excel output file

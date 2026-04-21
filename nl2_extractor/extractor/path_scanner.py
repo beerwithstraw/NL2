@@ -126,8 +126,8 @@ def scan(config: Dict[str, Any]) -> List[ScanResult]:
                         ))
                         direct_companies.add(company_key)
 
-            # --- Scan NL2_Consolidated/ subfolder ---
-            consol_path = os.path.join(q_path, "NL2_Consolidated")
+            # --- Scan Consolidated/ subfolder ---
+            consol_path = os.path.join(q_path, "Consolidated")
             if config.get("consolidated_mode", "dynamic") != "skip" and os.path.isdir(consol_path):
                 for fname in os.listdir(consol_path):
                     if not fname.lower().endswith(".pdf"):

@@ -7,3 +7,4 @@ nl2_extractor/.coverage
 nl2_extractor/.pytest_cache/
 *.pyc
 .DS_Store
+.claude/
