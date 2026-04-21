@@ -208,8 +208,8 @@ COMPANY_METADATA = {
         "competitors": "Others",
     },
     "galaxy_health": {
-        "company_name": "GALAXY",
-        "sorted_company": "33-GALAXY",
+        "company_name": "GALAXY_HEALTH",
+        "sorted_company": "33-GALAXY_HEALTH",
         "sector": "SAHI",
         "competitors": "Others",
     },
