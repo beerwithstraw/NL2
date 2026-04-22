@@ -35,4 +35,3 @@ nl2_keywords:
 nl2_keyword_min_matches: 3
 
 # Per-company overrides for consolidated PDF page detection.
-nl2_page_overrides: {}

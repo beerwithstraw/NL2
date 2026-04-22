@@ -25,11 +25,14 @@ DEFAULT_KEYWORDS = [
     "INCOME FROM INVESTMENTS",
 ]
 
-FORM_HEADER_PATTERN = re.compile(r"FORM\s+NL[-\s]?(\d+)", re.IGNORECASE)
-TOC_SKIP_PATTERN = re.compile(
-    r"TABLE\s+OF\s+CONTENTS|FORM\s+INDEX|INDEX\s+OF\s+FORMS",
-    re.IGNORECASE,
+FORM_HEADER_PATTERN = re.compile(
+    r"^\s*(?:FORM\s+)?NL[-\s]?(\d+)|\bFORM\s+NL[-\s]?(\d+)", 
+    re.IGNORECASE | re.MULTILINE
 )
+def is_toc_page(text: str) -> bool:
+    if re.search(r"TABLE\s+OF\s+CONTENTS|FORM\s+INDEX|INDEX\s+OF\s+FORMS", text, re.IGNORECASE):
+        return True
+    return False
 
 
 def _page_keyword_count(text: str, keywords: List[str]) -> int:
@@ -68,7 +71,7 @@ def find_nl2_pages(
 
         start_page = None
         for i, text in enumerate(page_texts):
-            if TOC_SKIP_PATTERN.search(text):
+            if is_toc_page(text):
                 logger.debug(f"  page {i + 1}: TOC page, skipping")
                 continue
             if _page_keyword_count(text, keywords) >= min_matches:
@@ -83,7 +86,10 @@ def find_nl2_pages(
         for i in range(start_page + 1, n_pages):
             text = page_texts[i]
             matches = FORM_HEADER_PATTERN.findall(text)
-            non_nl2 = [m for m in matches if m != "2"]
+            flat_matches = []
+            for m in matches:
+                flat_matches.extend(g for g in m if g)
+            non_nl2 = [m for m in flat_matches if m != "2"]
             if non_nl2:
                 end_page = i - 1
                 break
