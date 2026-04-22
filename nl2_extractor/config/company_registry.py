@@ -52,7 +52,7 @@ COMPANY_MAP = {
     "manipal cigna": "manipal_cigna",
     "care health": "care_health",
     "carehealth": "care_health",
-    
+    "care": "care_health",
     "niva bupa": "niva_bupa",
     "nivabupa": "niva_bupa",
     "star health": "star_health",
