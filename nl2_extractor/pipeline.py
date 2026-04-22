@@ -87,7 +87,7 @@ def main():
 
     logger.info("Scanning folder structure...")
     try:
-        scan_results, unrecognized = scan(config)
+        scan_results, unrecognized, redundant = scan(config)
     except (FileNotFoundError, ValueError) as e:
         logger.error(str(e))
         sys.exit(1)
@@ -139,6 +139,11 @@ def main():
             print(f"\nUNDETECTED FILES ({len(unrecognized)}):")
             for path in sorted(unrecognized):
                 print(f"  [!] {os.path.basename(path)}  ({path})")
+                
+        if redundant:
+            print(f"\nREDUNDANT CONSOLIDATED FILES (SKIPPED) ({len(redundant)}):")
+            for path in sorted(redundant):
+                print(f"  [-] {os.path.basename(path)}  (Direct file already exists)")
         
         print("\n" + "="*60)
         sys.exit(0)
