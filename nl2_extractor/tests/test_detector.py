@@ -24,7 +24,7 @@ def test_filename_detection_nl2():
     assert _FILENAME_NL2_PATTERN.search("NL-2_Q3_202526_Bajaj.pdf")
     assert _FILENAME_NL2_PATTERN.search("NL_2_2025_26_Q3_BajajGeneral.pdf")
     assert not _FILENAME_NL2_PATTERN.search("NL_06_2025_26_Q3_BajajGeneral.pdf")
-    assert not _FILENAME_NL2_PATTERN.search("NL20_something.pdf")
+    assert not _FILENAME_NL2_PATTERN.search("NL2_something.pdf")
 
 
 def test_detect_company_bajaj():

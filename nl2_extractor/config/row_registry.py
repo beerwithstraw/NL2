@@ -14,7 +14,7 @@ import re
 # Canonical row keys — ordered for output.
 # 32 entries — the fixed row structure for all NL-2 forms.
 NL2_ROW_ORDER = [
-    # --- Section 1: Operating Profit/Loss (from NL-1) ---
+    # --- Section 1: Operating Profit/Loss (from NL-2) ---
     "section_operating",          # display-only header; depth=-1; no data extracted
     "op_fire",
     "op_marine",

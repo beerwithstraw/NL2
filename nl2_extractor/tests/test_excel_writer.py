@@ -67,7 +67,7 @@ def test_master_data_column_headers(tmp_path):
     assert "CY_YTD" not in header_row
     assert "PY_Qtr" not in header_row
     assert "PY_YTD" not in header_row
-    # NL6 columns must NOT be present
+    # NL2 columns must NOT be present
     assert "Gross_Commission" not in header_row
     assert "Total_Channel" not in header_row
     assert "LOB_PARTICULARS" not in header_row

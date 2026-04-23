@@ -39,7 +39,7 @@ _LABEL_MAX_X = 290.0
 # Y-tolerance for grouping words on the same logical row
 _Y_TOL = 5
 
-# Strip schedule references: NL-1, NL-4A, etc.
+# Strip schedule references: NL-2, NL-2A, etc.
 _SCHEDULE_RE = re.compile(r"\bNL-\d+[A-Z]?\b", re.IGNORECASE)
 
 # Strip leading serial number ("2 income from investments" → "income from investments")
