@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Quarter detection from date strings (shared with NL2)
+# Quarter detection from date strings
 # ---------------------------------------------------------------------------
 
 _QUARTER_MONTH_MAP = {
